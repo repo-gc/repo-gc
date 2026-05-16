@@ -1,0 +1,16 @@
+{
+  "name": "repo-gc-rust",
+  "version": "0.1.0",
+  "description": "AI-era Rust repository hygiene analyzer. Requires Rust/Cargo (https://rustup.rs/) — compiles a native binary on first install.",
+  "keywords": ["rust", "analysis", "ai", "llm", "repository", "hygiene"],
+  "license": "MIT",
+  "bin": {
+    "repo-gc": "./bin/repo-gc-rust.js",
+    "repo-gc-rust": "./bin/repo-gc-rust.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "engines": { "node": ">=14" },
+  "files": ["bin/", "install.js", "src/", "Cargo.toml"]
+}

@@ -38,16 +38,16 @@ pub fn analyze(
         confidence: 0.65,
         path: file.relative_path.clone(),
         summary: format!(
-            "{} likely-unused import(s): {}",
+            "Zombie imports — {} unused names inflate token usage in every context window: {}",
             unused.len(),
             preview.join(", ")
         ),
         reasons: vec![format!(
-            "{} imported names not referenced in file body (macros may cause false positives)",
+            "{} imported names not referenced in file body; macros/derives may cause false positives",
             unused.len()
         )],
         evidence: unused.iter().map(|n| format!("imported but unreferenced: {n}")).collect(),
-        suggested_next_step: "Remove unused imports, or verify they are used via derive/proc-macros"
+        suggested_next_step: "Remove zombie imports to reduce token waste, or verify they are needed by derive macros"
             .into(),
         estimated_tokens: None,
     })

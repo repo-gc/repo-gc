@@ -42,7 +42,7 @@ pub fn analyze(
         confidence: 0.8,
         path: file.relative_path.clone(),
         summary: format!(
-            "Re-export entropy: {} symbols forwarded via pub use",
+            "Re-export chain — {} symbols via pub use, agents traverse multiple files to resolve each import",
             total_items
         ),
         reasons,
@@ -52,7 +52,7 @@ pub fn analyze(
             format!("has_wildcard: {}", has_wildcard),
         ],
         suggested_next_step: format!(
-            "Flatten the re-export chain in {} or remove the barrel file",
+            "Flatten the re-export chain in {} — barrel files degrade LLM path resolution",
             file.relative_path.display()
         ),
         estimated_tokens: None,
@@ -62,7 +62,7 @@ pub fn analyze(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parsing::PubUseEntry;
+    use crate::parsing::extractor::PubUseEntry;
     use std::path::PathBuf;
 
     fn mkfile() -> RustFile {

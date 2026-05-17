@@ -2,8 +2,8 @@
 name = "repo-gc-rust"
 version = "0.1.0"
 edition = "2021"
-description = "AI-era Rust repository hygiene analyzer"
-license = "MIT"
+description = "Finds patterns in Rust codebases that waste tokens, confuse AI agents, and break AI-assisted edits"
+license = "FSL-1.1-MIT"
 repository = "https://github.com/repo-gc/repo-gc-rust"
 
 [[bin]]

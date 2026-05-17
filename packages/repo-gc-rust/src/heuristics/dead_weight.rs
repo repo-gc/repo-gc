@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::path::PathBuf;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
 use crate::types::{Finding, FindingKind, Severity};
@@ -83,12 +82,12 @@ pub fn analyze_orphaned_files(
                 confidence: 0.6,
                 path: file.relative_path.clone(),
                 summary: format!(
-                    "Orphaned file: {} (module '{}') not referenced by any use or mod declaration",
+                    "Dead module — {} (~{} lines) loaded into agent context but never referenced",
                     file.relative_path.display(),
-                    module_path
+                    file.line_count
                 ),
                 reasons: vec![format!(
-                    "Module path '{}' not found in any use or mod declaration",
+                    "Module '{}' is not imported by any other module — wasted context capacity",
                     module_path
                 )],
                 evidence: vec![
@@ -96,7 +95,7 @@ pub fn analyze_orphaned_files(
                     format!("line_count: {}", file.line_count),
                 ],
                 suggested_next_step: format!(
-                    "Verify {} is still needed; add `mod {}` or delete it",
+                    "Remove {} or add a `mod {}` declaration if it is still needed",
                     file.relative_path.display(),
                     stem
                 ),
@@ -150,6 +149,7 @@ fn resolve_to_module_path(use_path: &str, current_module: &str) -> Option<String
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     fn mkfile(pkg: &str, stem: &str) -> RustFile {
         let name = format!("src/{}.rs", stem);

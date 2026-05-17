@@ -56,14 +56,14 @@ pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> 
             confidence: 0.85,
             path: primary_path,
             summary: format!(
-                "Function body duplicated across {file_count} files (fn `{}`)",
+                "Duplicate logic — fn `{}` copied across {file_count} files, AI edits will not propagate",
                 locations[0].1
             ),
             reasons: vec![format!(
-                "Identical function body found in {file_count} different files"
+                "Identical function body found in {file_count} different files — AI edits will not propagate"
             )],
             evidence,
-            suggested_next_step: "Extract duplicated logic into a shared utility function or trait"
+            suggested_next_step: "DRY it up: extract duplicated logic into a shared utility function or trait"
                 .into(),
             estimated_tokens: None,
         });

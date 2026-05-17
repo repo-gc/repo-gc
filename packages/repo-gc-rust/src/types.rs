@@ -67,9 +67,11 @@ pub struct Finding {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalScore {
-    pub ai_hostility_score: u32,
+    pub ai_friction_score: u32,
     pub context_waste_score: u32,
-    pub entropy_score: u32,
+    pub structural_entropy_score: u32,
+    pub context_waste_ratio: f64,
+    pub estimated_waste_pct: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

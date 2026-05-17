@@ -44,7 +44,7 @@ pub fn analyze(
         confidence: if file.line_count >= limit * 2 { 0.95 } else { 0.75 },
         path: file.relative_path.clone(),
         summary: format!(
-            "Context bomb: {} lines (~{} tokens)",
+            "Oversized file — {} lines / ~{} tokens, each AI edit re-reads this entire file",
             file.line_count, estimated_tokens
         ),
         reasons,
@@ -53,8 +53,9 @@ pub fn analyze(
             format!("estimated_tokens: {}", estimated_tokens),
         ],
         suggested_next_step: format!(
-            "Split {} into smaller, focused modules",
-            file.relative_path.display()
+            "Split {} into smaller modules (target <{} lines each)",
+            file.relative_path.display(),
+            limit
         ),
         estimated_tokens: Some(estimated_tokens),
     })

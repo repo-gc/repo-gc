@@ -6,9 +6,9 @@ pub fn render(report: &Report, no_color: bool) {
         colored::control::set_override(false);
     }
 
-    println!("\n{}", "═══ repo-gc ═══".bold());
+    println!("\n{}", "═══ repo-gc — AI Context Efficiency ═══".bold());
     println!(
-        "Files: {}  Lines: {}  Est. tokens: ~{}k",
+        "Files: {}  Lines: {}  Est. LLM tokens: ~{}k",
         report.files_analyzed,
         report.total_lines,
         report.total_estimated_tokens / 1000
@@ -20,20 +20,42 @@ pub fn render(report: &Report, no_color: bool) {
     }
 
     let gs = &report.global_score;
-    println!("{}", "Global Scores".bold().underline());
-    println!("  AI Hostility:  {}", colorize(gs.ai_hostility_score));
-    println!("  Context Waste: {}", colorize(gs.context_waste_score));
-    println!("  Entropy:       {}\n", colorize(gs.entropy_score));
+    println!("{}", "Global Scores (0-100, higher = worse)".bold().underline());
+    println!(
+        "  AI Friction:        {}  {} ({})",
+        score_bar(gs.ai_friction_score),
+        colorize(gs.ai_friction_score),
+        score_label(gs.ai_friction_score)
+    );
+    println!(
+        "  Context Waste:      {}  {} ({})",
+        score_bar(gs.context_waste_score),
+        colorize(gs.context_waste_score),
+        score_label(gs.context_waste_score)
+    );
+    println!(
+        "  Structural Entropy: {}  {} ({})\n",
+        score_bar(gs.structural_entropy_score),
+        colorize(gs.structural_entropy_score),
+        score_label(gs.structural_entropy_score)
+    );
+
+    println!(
+        "{}  Your repo wastes ~{}% of agent context capacity (~{:.1}x Claude sessions)\n",
+        "▸".yellow().bold(),
+        gs.estimated_waste_pct,
+        gs.context_waste_ratio
+    );
 
     if report.findings.is_empty() {
-        println!("{}", "No issues found.".green().bold());
+        println!("{}", "No issues found — your codebase is AI-friendly.".green().bold());
         return;
     }
 
     let mut sorted = report.findings.clone();
     sorted.sort_by(|a, b| b.severity.weight().partial_cmp(&a.severity.weight()).unwrap());
 
-    println!("{} ({} total)", "Findings".bold().underline(), sorted.len());
+    println!("{} ({} total)", "Detected Patterns".bold().underline(), sorted.len());
     for (i, f) in sorted.iter().enumerate() {
         let tok = f
             .estimated_tokens
@@ -59,11 +81,27 @@ pub fn render(report: &Report, no_color: bool) {
         .take(5)
         .collect();
     if !top.is_empty() {
-        println!("{}", "Next Cleanup Targets".bold().underline());
+        println!("{}", "Priority Cleanup Targets (reduce AI friction fastest)".bold().underline());
         for f in top {
             println!("  → {}", f.suggested_next_step);
         }
         println!();
+    }
+}
+
+fn score_bar(score: u32) -> String {
+    let filled = (score / 10).min(10) as usize;
+    let empty = 10 - filled;
+    format!("{}{}", "█".repeat(filled), "░".repeat(empty))
+}
+
+fn score_label(score: u32) -> &'static str {
+    if score >= 70 {
+        "HIGH"
+    } else if score >= 40 {
+        "MEDIUM"
+    } else {
+        "LOW"
     }
 }
 

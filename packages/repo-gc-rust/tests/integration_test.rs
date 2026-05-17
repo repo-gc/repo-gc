@@ -62,7 +62,7 @@ fn scan_produces_output_on_test_repo() {
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("Findings") || stdout.contains("No issues"),
+        stdout.contains("Detected Patterns") || stdout.contains("No issues"),
         "output: {}",
         stdout
     );
@@ -83,8 +83,8 @@ fn json_output_has_expected_fields() {
         .unwrap_or_else(|e| panic!("Invalid JSON: {} — output was: {}", e, stdout));
     assert!(v["findings"].is_array(), "missing findings");
     assert!(
-        v["global_score"]["ai_hostility_score"].is_number(),
-        "missing ai_hostility_score"
+        v["global_score"]["ai_friction_score"].is_number(),
+        "missing ai_friction_score"
     );
     assert!(v["files_analyzed"].is_number(), "missing files_analyzed");
     assert!(v["files_skipped"].is_number(), "missing files_skipped");

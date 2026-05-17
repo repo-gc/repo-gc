@@ -7,7 +7,9 @@ use syn::visit::Visit;
 #[derive(Debug, Clone, Default)]
 pub struct FileStructure {
     pub path: PathBuf,
+    #[allow(dead_code)]
     pub relative_path: PathBuf,
+    #[allow(dead_code)]
     pub package_name: String,
     /// Package-qualified Rust module path, e.g. "my_crate::foo::bar" for src/foo/bar.rs
     pub module_path: String,

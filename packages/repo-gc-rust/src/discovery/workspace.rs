@@ -4,6 +4,7 @@ use anyhow::Result;
 #[derive(Debug, Clone)]
 pub struct PackageInfo {
     pub name: String,
+    #[allow(dead_code)]
     pub manifest_path: PathBuf,
     /// Source roots for this package, derived from Cargo target src paths.
     pub source_roots: Vec<PathBuf>,
@@ -13,6 +14,7 @@ pub struct PackageInfo {
 pub struct WorkspaceInfo {
     pub root: PathBuf,
     pub packages: Vec<PackageInfo>,
+    #[allow(dead_code)]
     pub is_workspace: bool,
 }
 

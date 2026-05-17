@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(name = "repo-gc", version, about = "AI-era Rust repository hygiene analyzer")]
+#[command(name = "repo-gc", version, about = "Find patterns that waste tokens, confuse AI agents, and break AI-assisted edits")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -10,7 +10,7 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Scan the repository and print diagnostics
+    /// Scan the repository for AI-context-wasting patterns
     Scan {
         #[arg(long, default_value = ".")] path: PathBuf,
         #[arg(long, value_enum, default_value = "text")] format: OutputFormat,
@@ -18,20 +18,20 @@ pub enum Commands {
         #[arg(long, default_value = "false")] include_tests: bool,
         #[arg(long)] no_color: bool,
     },
-    /// Generate a summary report
+    /// Generate an AI Context Efficiency report
     Report {
         #[arg(long, default_value = ".")] path: PathBuf,
         #[arg(long, value_enum, default_value = "text")] format: OutputFormat,
         #[arg(long, value_enum, default_value = "normal")] threshold: Threshold,
         #[arg(long)] include_tests: bool,
     },
-    /// Emit diagnostics as JSON
+    /// Emit findings as JSON (for CI integration)
     Json {
         #[arg(long, default_value = ".")] path: PathBuf,
         #[arg(long, value_enum, default_value = "normal")] threshold: Threshold,
         #[arg(long)] include_tests: bool,
     },
-    /// Explain why a file is considered problematic
+    /// Explain why a file degrades AI context efficiency
     Explain {
         path: PathBuf,
         #[arg(long, default_value = ".")] root: PathBuf,

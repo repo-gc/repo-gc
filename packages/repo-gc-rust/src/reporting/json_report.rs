@@ -27,9 +27,11 @@ mod tests {
                 estimated_tokens: Some(10000),
             }],
             global_score: GlobalScore {
-                ai_hostility_score: 55,
+                ai_friction_score: 55,
                 context_waste_score: 40,
-                entropy_score: 20,
+                structural_entropy_score: 20,
+                context_waste_ratio: 0.39,
+                estimated_waste_pct: 8,
             },
             files_analyzed: 10,
             files_skipped: 2,
@@ -37,7 +39,7 @@ mod tests {
             total_estimated_tokens: 50000,
         };
         let v: serde_json::Value = serde_json::from_str(&render(&report).unwrap()).unwrap();
-        assert_eq!(v["global_score"]["ai_hostility_score"], 55);
+        assert_eq!(v["global_score"]["ai_friction_score"], 55);
         assert_eq!(v["files_skipped"], 2);
         assert!(v["findings"].is_array());
     }

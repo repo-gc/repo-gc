@@ -45,14 +45,17 @@ pub fn analyze(
         severity,
         confidence: 0.85,
         path: file.relative_path.clone(),
-        summary: format!("Coupling hotspot: fan-in={}, fan-out={}", fan_in, fan_out),
+        summary: format!(
+            "Dependency concentration — fan-in={}, fan-out={} increases LLM reasoning overhead",
+            fan_in, fan_out
+        ),
         reasons,
         evidence: vec![
             format!("fan_in: {}", fan_in),
             format!("fan_out: {}", fan_out),
         ],
         suggested_next_step: format!(
-            "Extract an interface or narrow the public API of {} to reduce coupling",
+            "Extract an interface to decouple {} from its dependents",
             file.relative_path.display()
         ),
         estimated_tokens: None,
@@ -62,7 +65,6 @@ pub fn analyze(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
     use std::path::PathBuf;
 
     fn mkfile(p: &str) -> RustFile {

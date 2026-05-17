@@ -53,9 +53,11 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
         return Ok(Report {
             findings: vec![],
             global_score: types::GlobalScore {
-                ai_hostility_score: 0,
+                ai_friction_score: 0,
                 context_waste_score: 0,
-                entropy_score: 0,
+                structural_entropy_score: 0,
+                context_waste_ratio: 0.0,
+                estimated_waste_pct: 0,
             },
             files_analyzed: 0,
             files_skipped: 0,
@@ -141,7 +143,7 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
     findings.sort_by(|a, b| b.severity.weight().partial_cmp(&a.severity.weight()).unwrap());
 
     Ok(Report {
-        global_score: scoring::compute_global_score(&findings, files.len()),
+        global_score: scoring::compute_global_score(&findings, files.len(), total_estimated_tokens),
         findings,
         files_analyzed: parsed.len(),
         files_skipped,
@@ -184,20 +186,20 @@ fn explain_file(target: &Path, root: &Path) -> Result<()> {
         .collect();
     let graph = graph::ImportGraph::build(&all_structures, &workspace.root);
 
-    println!("\n=== {} ===\n", file.relative_path.display());
-    println!("Module path:      {}", structure.module_path);
-    println!("Lines:            {}", file.line_count);
+    println!("\n═══ {} ═══\n", file.relative_path.display());
+    println!("Module path:           {}", structure.module_path);
+    println!("Lines of code:         {}", file.line_count);
     println!(
-        "Estimated tokens: ~{}",
+        "Est. LLM tokens:       ~{}",
         heuristics::context_bombs::estimate_tokens(file.size_bytes)
     );
     println!(
-        "Functions:        {} ({} public)",
+        "Functions:             {} ({} public)",
         structure.function_count, structure.public_function_count
     );
-    println!("Impl blocks:      {}", structure.impl_block_count);
-    println!("Pub use decls:    {}", structure.pub_use_paths.len());
-    println!("Fan-in:           {}", graph.get_fan_in(&file.path));
-    println!("Fan-out:          {}", graph.get_fan_out(&file.path));
+    println!("Impl blocks:           {}", structure.impl_block_count);
+    println!("Pub re-exports:        {}", structure.pub_use_paths.len());
+    println!("Import fan-in:         {}", graph.get_fan_in(&file.path));
+    println!("Import fan-out:        {}", graph.get_fan_out(&file.path));
     Ok(())
 }

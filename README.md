@@ -1,12 +1,25 @@
-# repo-gc-rust
+# repo-gc
 
-**Find the patterns in your Rust codebase that waste tokens, confuse AI agents, and slow down every edit.**
+**AI-era repository hygiene analyzers — find the patterns that waste tokens, confuse AI agents, and slow down every edit. One vision, multiple languages.**
 
 ```bash
-npx repo-gc-rust scan
+npx repo-gc-rust scan     # Rust (stable)
+npx repo-gc-typescript scan  # TypeScript (coming soon)
+npx repo-gc-python scan      # Python (coming soon)
 ```
 
 Zero friction. No signup. No auth. Internet not required at scan time.
+
+---
+
+## Packages
+
+| Package | Status | Description |
+|---------|--------|-------------|
+| [`repo-gc-rust`](./packages/repo-gc-rust) | **Stable** | Rust analyzer — detects oversized files, dead modules, re-export entropy, coupling hotspots, duplication, zombie imports |
+| `repo-gc-typescript` | Planned | TypeScript analyzer — stub only |
+| `repo-gc-python` | Planned | Python analyzer — stub only |
+| `repo-gc` | Planned | Umbrella meta-package — runs all language analyzers in one pass |
 
 ---
 
@@ -14,7 +27,7 @@ Zero friction. No signup. No auth. Internet not required at scan time.
 
 AI coding agents (Claude Code, Cursor, Copilot, Windsurf) read your codebase into a limited context window. Every oversized file, every dead module, every opaque re-export chain eats into that budget. The result: **higher token costs, broken edits, slower agent reasoning.**
 
-`repo-gc` detects 6 structural patterns that most impact AI tooling:
+`repo-gc-rust` detects 6 structural patterns that most impact AI tooling:
 
 | Pattern | Impact on AI-assisted development |
 |---------|-----------------------------------|
@@ -27,6 +40,8 @@ AI coding agents (Claude Code, Cursor, Copilot, Windsurf) read your codebase int
 
 All checks are **fully deterministic** — no LLM calls, no network, no hallucination risk.
 
+---
+
 ## Quick Start
 
 ```bash
@@ -35,6 +50,9 @@ npx repo-gc-rust scan
 
 # Markdown report — screenshot-ready, shareable
 npx repo-gc-rust scan --format md > REPO_HEALTH.md
+
+# Token-optimized output for LLM consumption
+npx repo-gc-rust scan --format llm > findings.llm.tsv
 
 # JSON output for CI pipelines
 npx repo-gc-rust scan --format json > results.json
@@ -46,7 +64,7 @@ npx repo-gc-rust explain src/main.rs
 npx repo-gc-rust scan --threshold strict
 ```
 
-> **Note:** The npm package is `repo-gc-rust`, but the installed binary is `repo-gc`. After `npm install -g repo-gc-rust`, run `repo-gc scan`.
+> **Note:** The npm package is `repo-gc-rust`; the binary inside it is `repo-gc`. `npx` handles this automatically.
 
 ## Understanding Your Scores (0–100)
 
@@ -83,17 +101,26 @@ Detected Patterns (6 total)
   ...
 ```
 
+## Output Formats
+
+| Format | Flag | Use case |
+|--------|------|----------|
+| Text | `--format text` (default) | Terminal, human-readable with ASCII score bars |
+| Markdown | `--format md` | Shareable reports, screenshots, PR comments |
+| JSON | `--format json` | CI integration, programmatic consumption |
+| LLM | `--format llm` | Token-optimized TSV for AI agent consumption (~73% smaller) |
+
 ## Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--path` | `.` | Target directory |
-| `--format` | `text` | Output: `text`, `json`, `md` |
+| `--format` | `text` | Output: `text`, `json`, `md`, `llm` |
 | `--threshold` | `normal` | Sensitivity: `strict`, `normal`, `relaxed` |
 | `--include-tests` | `false` | Include test files in analysis |
 | `--no-color` | `false` | Plain text output |
 
-## How It Works
+## How It Works (Rust analyzer)
 
 1. **Discovers** your Cargo workspace via `cargo_metadata`
 2. **Parses** each `.rs` file with `syn` (Rust's official parser)
@@ -108,7 +135,6 @@ All analysis is **fully offline and deterministic** — no external API calls, n
 
 ```bash
 npx repo-gc-rust scan           # zero-install, runs instantly
-npm install -g repo-gc-rust     # global install
 cargo install repo-gc-rust      # Rust toolchain required
 ```
 
@@ -131,6 +157,8 @@ Each version converts to MIT after 2 years. See [LICENSE](./LICENSE) for the ful
 ## What's Next
 
 This is the **free, zero-friction scanner** — the distribution engine. Paid features (CI integration, trend tracking, team dashboards, PR automation) are in development. The scanner will always be free.
+
+Future language analyzers (TypeScript, Python) will follow the same architecture: deterministic AST parsing → dependency graph → heuristic scoring → multi-format output.
 
 ---
 

@@ -43,6 +43,8 @@ pub enum OutputFormat {
     Text,
     Json,
     Md,
+    /// Token-optimized TSV for LLM consumption
+    Llm,
 }
 
 #[derive(ValueEnum, Debug, Clone, PartialEq)]

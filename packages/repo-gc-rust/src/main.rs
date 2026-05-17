@@ -160,6 +160,7 @@ fn render_report(report: &Report, format: &OutputFormat, no_color: bool) {
             reporting::json_report::render(report).unwrap_or_else(|e| e.to_string())
         ),
         OutputFormat::Md => println!("{}", reporting::markdown::render(report)),
+        OutputFormat::Llm => println!("{}", reporting::llm::render(report)),
     }
 }
 

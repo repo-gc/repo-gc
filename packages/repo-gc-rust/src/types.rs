@@ -26,6 +26,14 @@ impl Severity {
             Severity::Low => "LOW",
         }
     }
+    pub fn llm_label(&self) -> &'static str {
+        match self {
+            Severity::Critical => "C",
+            Severity::High => "H",
+            Severity::Medium => "M",
+            Severity::Low => "L",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -47,6 +55,17 @@ impl FindingKind {
             FindingKind::CouplingHotspot => "coupling-hotspot",
             FindingKind::CodeDuplication => "code-duplication",
             FindingKind::UnusedImport => "unused-import",
+        }
+    }
+    /// Short code for LLM/token-efficient output
+    pub fn llm_label(&self) -> &'static str {
+        match self {
+            FindingKind::ContextBomb => "OVS",
+            FindingKind::DeadWeight => "DEAD",
+            FindingKind::ReexportEntropy => "EXP",
+            FindingKind::CouplingHotspot => "COUP",
+            FindingKind::CodeDuplication => "DUP",
+            FindingKind::UnusedImport => "ZOMB",
         }
     }
 }

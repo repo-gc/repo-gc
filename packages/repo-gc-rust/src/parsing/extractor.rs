@@ -1,5 +1,7 @@
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use anyhow::Result;
+use quote::quote;
 use syn::visit::Visit;
 
 #[derive(Debug, Clone, Default)]
@@ -19,6 +21,14 @@ pub struct FileStructure {
     pub pub_use_paths: Vec<PubUseEntry>,
     pub mod_declarations: Vec<String>,
     pub pub_mod_count: usize,
+    /// Leaf names imported by private `use` statements (for unused-import detection)
+    pub use_leaf_names: Vec<String>,
+    /// All (name, is_public) for fns and methods (for duplication + dead-private detection)
+    pub function_names: Vec<(String, bool)>,
+    /// (fn_name, normalized_body_tokens) for duplication detection
+    pub function_bodies: Vec<(String, String)>,
+    /// All identifiers used in the file body, excluding `use` declarations
+    pub all_identifiers: HashSet<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -30,26 +40,40 @@ pub struct PubUseEntry {
 
 /// Compute the unqualified Rust module path from a path relative to the workspace root.
 ///
-/// src/foo/bar.rs  → "foo::bar"
-/// src/foo/mod.rs  → "foo"
-/// src/lib.rs      → "lib"
-/// foo/bar.rs      → "foo::bar"  (no src/ prefix)
+/// Works for any layout — finds the "src" component positionally, then uses
+/// everything after it. Falls back to the whole path if no "src" is present.
+///
+/// src/foo/bar.rs                    → "foo::bar"
+/// src/foo/mod.rs                    → "foo"
+/// src/lib.rs                        → "lib"
+/// packages/repo-gc-rust/src/foo.rs  → "foo"
 pub fn module_path_from_relative(rel: &Path) -> String {
-    // Strip leading "src" component if present
-    let stripped = if rel.starts_with("src") {
-        rel.strip_prefix("src").unwrap_or(rel)
+    let components: Vec<_> = rel.components().collect();
+
+    // Find the "src" component; use everything after it (or the whole path as fallback)
+    let src_pos = components.iter().position(|c| {
+        matches!(c, std::path::Component::Normal(s) if *s == "src")
+    });
+    let after_src = if let Some(pos) = src_pos {
+        &components[pos + 1..]
     } else {
-        rel
+        &components[..]
     };
 
-    let without_ext = stripped.with_extension("");
-    let parts: Vec<&str> = without_ext
-        .components()
+    let mut parts: Vec<&str> = after_src
+        .iter()
         .filter_map(|c| match c {
             std::path::Component::Normal(s) => s.to_str(),
             _ => None,
         })
         .collect();
+
+    // Drop file extension from the last segment
+    if let Some(last) = parts.last_mut() {
+        if let Some(dot) = last.rfind('.') {
+            *last = &last[..dot];
+        }
+    }
 
     if parts.is_empty() {
         return String::new();
@@ -98,10 +122,27 @@ impl Visitor {
 impl<'ast> Visit<'ast> for Visitor {
     fn visit_item_fn(&mut self, i: &'ast syn::ItemFn) {
         self.s.function_count += 1;
-        if matches!(i.vis, syn::Visibility::Public(_)) {
+        let is_pub = matches!(i.vis, syn::Visibility::Public(_));
+        if is_pub {
             self.s.public_function_count += 1;
         }
+        let name = i.sig.ident.to_string();
+        self.s.function_names.push((name.clone(), is_pub));
+        let body = i.block.as_ref();
+        self.s.function_bodies.push((name, quote!(#body).to_string()));
         syn::visit::visit_item_fn(self, i);
+    }
+    fn visit_impl_item_fn(&mut self, i: &'ast syn::ImplItemFn) {
+        self.s.function_count += 1;
+        let is_pub = matches!(i.vis, syn::Visibility::Public(_));
+        if is_pub {
+            self.s.public_function_count += 1;
+        }
+        let name = i.sig.ident.to_string();
+        self.s.function_names.push((name.clone(), is_pub));
+        let body = &i.block;
+        self.s.function_bodies.push((name, quote!(#body).to_string()));
+        syn::visit::visit_impl_item_fn(self, i);
     }
     fn visit_item_impl(&mut self, i: &'ast syn::ItemImpl) {
         self.s.impl_block_count += 1;
@@ -129,6 +170,7 @@ impl<'ast> Visit<'ast> for Visitor {
             });
         } else {
             self.s.use_paths.push(path_str);
+            self.s.use_leaf_names.extend(collect_leaf_names(&i.tree));
         }
     }
     fn visit_item_mod(&mut self, i: &'ast syn::ItemMod) {
@@ -176,6 +218,33 @@ fn is_wildcard_use(t: &syn::UseTree) -> bool {
     }
 }
 
+/// Collect the imported leaf names from a use tree.
+/// `use a::b::{C, D as E}` → ["C", "E"]
+/// Wildcards produce no names (can't know what they import).
+fn collect_leaf_names(t: &syn::UseTree) -> Vec<String> {
+    match t {
+        syn::UseTree::Path(p) => collect_leaf_names(&p.tree),
+        syn::UseTree::Name(n) => vec![n.ident.to_string()],
+        syn::UseTree::Rename(r) => vec![r.rename.to_string()],
+        syn::UseTree::Glob(_) => vec![],
+        syn::UseTree::Group(g) => g.items.iter().flat_map(collect_leaf_names).collect(),
+    }
+}
+
+/// Collects all identifiers used in the file, skipping `use` declarations.
+/// Used to detect which imported names are actually referenced.
+#[derive(Default)]
+struct IdentCollector {
+    idents: HashSet<String>,
+}
+
+impl<'ast> Visit<'ast> for IdentCollector {
+    fn visit_ident(&mut self, i: &'ast proc_macro2::Ident) {
+        self.idents.insert(i.to_string());
+    }
+    fn visit_item_use(&mut self, _: &'ast syn::ItemUse) {}
+}
+
 pub fn extract_structure(
     path: &Path,
     relative_path: PathBuf,
@@ -185,7 +254,11 @@ pub fn extract_structure(
     let syntax = syn::parse_file(&content)?;
     let mut visitor = Visitor::new(path.to_path_buf(), relative_path, package_name);
     visitor.visit_file(&syntax);
-    Ok(visitor.s)
+    let mut s = visitor.s;
+    let mut ic = IdentCollector::default();
+    ic.visit_file(&syntax);
+    s.all_identifiers = ic.idents;
+    Ok(s)
 }
 
 #[cfg(test)]

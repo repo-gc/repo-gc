@@ -1,0 +1,9 @@
+{
+  "name": "repo-gc-python",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AI-era Python repository hygiene analyzer",
+  "license": "MIT",
+  "repository": "https://github.com/repo-gc/repo-gc",
+  "bin": "./src/index.ts"
+}

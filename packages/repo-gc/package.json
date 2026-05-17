@@ -1,0 +1,9 @@
+{
+  "name": "repo-gc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Repository hygiene analyzer — wrapper for all language analyzers",
+  "license": "MIT",
+  "repository": "https://github.com/repo-gc/repo-gc",
+  "bin": "./src/index.ts"
+}

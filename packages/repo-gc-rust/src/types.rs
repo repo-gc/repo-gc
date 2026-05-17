@@ -34,6 +34,8 @@ pub enum FindingKind {
     DeadWeight,
     ReexportEntropy,
     CouplingHotspot,
+    CodeDuplication,
+    UnusedImport,
 }
 
 impl FindingKind {
@@ -43,6 +45,8 @@ impl FindingKind {
             FindingKind::DeadWeight => "dead-weight",
             FindingKind::ReexportEntropy => "reexport-entropy",
             FindingKind::CouplingHotspot => "coupling-hotspot",
+            FindingKind::CodeDuplication => "code-duplication",
+            FindingKind::UnusedImport => "unused-import",
         }
     }
 }

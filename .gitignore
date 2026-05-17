@@ -1,3 +1,6 @@
 /target
-Cargo.lock
 node_modules/
+.claude/
+.gitignore
+.omc
+deepclaude.sh

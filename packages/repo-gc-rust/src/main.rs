@@ -107,6 +107,7 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
     let mut re = 0usize;
     let mut ch = 0usize;
     let mut dw = 0usize;
+    let mut ui = 0usize;
 
     for pf in &parsed {
         if let Some(f) =
@@ -122,6 +123,11 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
         if let Some(f) = heuristics::coupling::analyze(&pf.file, &graph, threshold, &mut ch) {
             findings.push(f);
         }
+        if let Some(f) =
+            heuristics::unused_imports::analyze(&pf.file, &pf.structure, threshold, &mut ui)
+        {
+            findings.push(f);
+        }
     }
 
     let all_files: Vec<_> = parsed.iter().map(|pf| pf.file.clone()).collect();
@@ -130,6 +136,8 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
         &all_structures,
         &mut dw,
     ));
+    let mut dup = 0usize;
+    findings.extend(heuristics::duplication::analyze_duplicates(&all_structures, &mut dup));
     findings.sort_by(|a, b| b.severity.weight().partial_cmp(&a.severity.weight()).unwrap());
 
     Ok(Report {

@@ -69,10 +69,17 @@ pub fn analyze_orphaned_files(
 
         if !is_referenced {
             *counter += 1;
+            let severity = if file.line_count >= 1000 {
+                Severity::Critical
+            } else if file.line_count >= 500 {
+                Severity::High
+            } else {
+                Severity::Medium
+            };
             findings.push(Finding {
                 id: format!("dw-{:03}", counter),
                 kind: FindingKind::DeadWeight,
-                severity: Severity::Medium,
+                severity,
                 confidence: 0.6,
                 path: file.relative_path.clone(),
                 summary: format!(
@@ -143,7 +150,6 @@ fn resolve_to_module_path(use_path: &str, current_module: &str) -> Option<String
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parsing::PubUseEntry;
 
     fn mkfile(pkg: &str, stem: &str) -> RustFile {
         let name = format!("src/{}.rs", stem);

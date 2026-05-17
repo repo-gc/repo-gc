@@ -1,7 +1,9 @@
 use crate::types::{Finding, FindingKind, GlobalScore};
 
 pub fn compute_global_score(findings: &[Finding], total_files: usize) -> GlobalScore {
-    let max_expected = (total_files as f32 * 1.5).max(1.0);
+    // Divisor: expect a healthy repo to have ~0 findings, so we normalize against
+    // 40% of files having issues (vs. the old 150% which deflated scores heavily).
+    let max_expected = (total_files as f32 * 0.4).max(1.0);
 
     let ai_hostility = ((findings
         .iter()
@@ -15,7 +17,7 @@ pub fn compute_global_score(findings: &[Finding], total_files: usize) -> GlobalS
     let context_waste = ((findings
         .iter()
         .filter(|f| matches!(f.kind, FindingKind::ContextBomb))
-        .map(|f| f.severity.weight())
+        .map(|f| f.severity.weight() * f.confidence)
         .sum::<f32>()
         / max_expected)
         * 100.0)
@@ -27,10 +29,14 @@ pub fn compute_global_score(findings: &[Finding], total_files: usize) -> GlobalS
         .filter(|f| {
             matches!(
                 f.kind,
-                FindingKind::ReexportEntropy | FindingKind::CouplingHotspot | FindingKind::DeadWeight
+                FindingKind::ReexportEntropy
+                    | FindingKind::CouplingHotspot
+                    | FindingKind::DeadWeight
+                    | FindingKind::CodeDuplication
+                    | FindingKind::UnusedImport
             )
         })
-        .map(|f| f.severity.weight())
+        .map(|f| f.severity.weight() * f.confidence)
         .sum::<f32>()
         / max_expected)
         * 100.0)

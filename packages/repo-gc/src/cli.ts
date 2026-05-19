@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name('repo-gc')
   .description('Multi-language repository hygiene analyzer — find patterns that waste AI context')
-  .version('0.1.0');
+  .version('0.2.0');
 
 async function loadPlugins(): Promise<LanguagePlugin[]> {
   const plugins: LanguagePlugin[] = [];

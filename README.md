@@ -2,6 +2,10 @@
 
 **AI-era repository hygiene analyzers — find the patterns that waste tokens, confuse AI agents, and slow down every edit. One runner, multiple language plugins.**
 
+[![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc)
+[![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript)
+[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](./LICENSE)
+
 ```bash
 npx repo-gc scan                 # auto-detects languages
 npx repo-gc --lang typescript    # TypeScript/JavaScript only
@@ -17,11 +21,11 @@ Zero friction. No signup. No auth. Internet not required at scan time.
 
 | Package | Status | Description |
 |---------|--------|-------------|
-| [`repo-gc`](./packages/repo-gc) | **Stable** | Umbrella runner — auto-detects languages, orchestrates plugins, formats output |
-| [`repo-gc-shared`](./packages/repo-gc-shared) | **Stable** | Shared types, scoring, thresholds, and reporters used by all packages |
-| [`repo-gc-typescript`](./packages/repo-gc-typescript) | **Stable** | TypeScript/JavaScript plugin — parses with oxc, runs 6 heuristics |
-| [`repo-gc-rust`](./packages/repo-gc-rust) | **Stable** | Rust analyzer — standalone native binary, also invocable as a plugin |
-| `repo-gc-python` | Planned | Python plugin — coming soon |
+| [`repo-gc`](./packages/repo-gc) | [![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc) | Umbrella runner — auto-detects languages, orchestrates plugins, formats output |
+| [`repo-gc-shared`](./packages/repo-gc-shared) | [![npm](https://img.shields.io/npm/v/repo-gc-shared)](https://www.npmjs.com/package/repo-gc-shared) | Shared types, scoring, thresholds, and reporters used by all packages |
+| [`repo-gc-typescript`](./packages/repo-gc-typescript) | [![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript) | TypeScript/JavaScript plugin — parses with oxc, runs 6 heuristics |
+| [`repo-gc-rust`](./packages/repo-gc-rust) | [![npm](https://img.shields.io/npm/v/repo-gc-rust)](https://www.npmjs.com/package/repo-gc-rust) | Rust analyzer — standalone native binary, also invocable as a plugin |
+| `repo-gc-python` | — | Python plugin — coming soon |
 
 ### Language Shortcuts
 
@@ -162,17 +166,46 @@ All analysis is **fully offline and deterministic** — no external API calls, n
 
 ## Install
 
+### Quick run (zero-install)
+
 ```bash
-npx repo-gc scan                 # zero-install, auto-detects languages
+npx repo-gc scan                 # auto-detects languages
 npx repo-gc-typescript scan      # TypeScript/JavaScript only
 npx repo-gc-rust scan            # Rust only (native binary)
 ```
 
+### Install as a dependency
+
+```bash
+pnpm add repo-gc repo-gc-typescript
+# or
+npm install repo-gc repo-gc-typescript
+```
+
+```ts
+import { scan } from 'repo-gc';
+const report = await scan({ path: '.', format: 'json', threshold: 'normal', includeTests: false, color: false }, []);
+console.log(report);
+```
+
+Each language plugin is optional — install only what you need. The umbrella runner auto-detects which plugins are available.
+
 ## Requirements
 
-- **Node.js 18+** (for `npx` / npm install)
+- **Node.js 18+**
 - No Rust toolchain needed for TypeScript/JavaScript analysis
 - Rust toolchain required to build the Rust analyzer from source (prebuilt binaries available via npm)
+
+## Build from Source
+
+```bash
+git clone https://github.com/repo-gc/repo-gc.git
+cd repo-gc
+pnpm install
+pnpm build                      # builds all TypeScript packages
+cargo build --release           # builds the Rust analyzer
+pnpm test                       # runs all test suites
+```
 
 ## License
 

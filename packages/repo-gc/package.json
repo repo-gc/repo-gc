@@ -1,8 +1,11 @@
 {
   "name": "repo-gc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Repository hygiene analyzer — multi-language AI context efficiency",
-  "license": "MIT",
+  "license": "FSL-1.1-MIT",
+  "repository": "https://github.com/repo-gc/repo-gc",
+  "author": "repo-gc authors",
+  "keywords": ["repo-gc", "repository", "hygiene", "ai", "llm", "context", "code-quality", "analyzer", "cli"],
   "type": "module",
   "bin": {
     "repo-gc": "./dist/cli.js"
@@ -17,7 +20,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "repo-gc-shared": "workspace:*",

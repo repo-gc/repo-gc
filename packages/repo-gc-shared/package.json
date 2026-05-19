@@ -1,12 +1,9 @@
 {
-  "name": "repo-gc",
+  "name": "repo-gc-shared",
   "version": "0.1.0",
-  "description": "Repository hygiene analyzer — multi-language AI context efficiency",
+  "description": "Shared types, constants, and algorithms for repo-gc analyzers",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "repo-gc": "./dist/cli.js"
-  },
   "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js"
@@ -20,16 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "repo-gc-shared": "workspace:*",
-    "commander": "^14.0.0",
-    "globby": "^14.0.0",
     "picocolors": "^1.1.0"
-  },
-  "peerDependencies": {
-    "repo-gc-typescript": "workspace:*"
-  },
-  "peerDependenciesMeta": {
-    "repo-gc-typescript": { "optional": true }
   },
   "devDependencies": {
     "tsup": "^8.0.0",

@@ -4,5 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.33.3",
   "license": "MIT",
-  "repository": "https://github.com/repo-gc/repo-gc"
+  "repository": "https://github.com/repo-gc/repo-gc",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "unrs-resolver"]
+  }
 }

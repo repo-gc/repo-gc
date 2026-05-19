@@ -1,9 +1,37 @@
 {
   "name": "repo-gc-typescript",
-  "version": "0.0.0",
-  "private": true,
-  "description": "AI-era TypeScript repository hygiene analyzer",
+  "version": "0.1.0",
+  "description": "AI-era TypeScript/JavaScript repository hygiene analyzer — detects oversized files, dead modules, coupling hotspots, barrel re-exports, duplicate code, and unused imports",
   "license": "MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
-  "bin": "./src/index.ts"
+  "type": "module",
+  "bin": {
+    "repo-gc-typescript": "./dist/cli.js"
+  },
+  "main": "./dist/plugin.js",
+  "exports": {
+    ".": "./dist/plugin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "repo-gc-shared": "workspace:*",
+    "oxc-parser": "^0.132.0",
+    "unrs-resolver": "^1.2.0"
+  },
+  "devDependencies": {
+    "@oxc-project/types": "^0.132.0",
+    "@types/node": "^25.9.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  }
 }

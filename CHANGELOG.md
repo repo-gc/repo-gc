@@ -2,10 +2,10 @@
 
 ## 0.2.0 (2026-05-19)
 
-Initial public release — monorepo architecture with umbrella runner, shared core, and TypeScript plugin.
+Initial public release — monorepo architecture with the main CLI runner, shared core, and TypeScript plugin.
 
 ### Architecture
-- **repo-gc**: Umbrella CLI runner — workspace discovery, language auto-detection, plugin orchestration, output formatting
+- **repo-gc**: Main CLI runner — workspace discovery, language auto-detection, plugin orchestration, output formatting
 - **repo-gc-shared**: Shared types, scoring formula, thresholds, token estimation, and 4 reporters (text, JSON, markdown, LLM-TSV)
 - **repo-gc-typescript**: Full TypeScript/JavaScript plugin — oxc parser, import graph, 6 heuristics
 - **repo-gc-rust**: Rust analyzer — standalone native binary, invocable as a plugin via CLI delegation

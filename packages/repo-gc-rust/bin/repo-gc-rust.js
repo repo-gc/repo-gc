@@ -13,7 +13,7 @@ const args = [subcommand, '--lang', 'rust', ...restArgs];
 
 const child = spawn(process.execPath, [repoGcCli, ...args], { stdio: 'inherit' });
 child.on('error', (err) => {
-  console.error('repo-gc umbrella runner not found. Install repo-gc alongside repo-gc-rust.');
+  console.error('repo-gc runner not found. Install repo-gc alongside repo-gc-rust.');
   process.exit(1);
 });
 child.on('exit', (code) => process.exit(code || 0));

@@ -14,7 +14,7 @@ export function detectLanguages(
       p.requiredManifests.some((m) => fs.existsSync(path.join(root, m)));
     // Plugins with requiredManifests handle their own file discovery —
     // the manifest check alone is sufficient. For others, require matching
-    // file extensions found by the umbrella runner.
+    // file extensions found by the main runner.
     if (p.requiredManifests && p.requiredManifests.length > 0) {
       return hasManifest;
     }

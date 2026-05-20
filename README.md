@@ -7,52 +7,42 @@
 [![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](./LICENSE)
 
 ```bash
-npx repo-gc scan                 # auto-detects languages
-npx repo-gc --lang typescript    # TypeScript/JavaScript only
-npx repo-gc-rust scan            # shortcut → repo-gc --lang rust
-npx repo-gc-typescript scan      # shortcut → repo-gc --lang typescript
+npx repo-gc scan
 ```
 
 Zero friction. No signup. No auth. Internet not required at scan time.
 
 ---
 
-## Packages
+## Quick Start
 
-| Package | Status | Description |
-|---------|--------|-------------|
-| [`repo-gc`](./packages/repo-gc) | [![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc) | Umbrella runner — auto-detects languages, orchestrates plugins, formats output |
-| [`repo-gc-shared`](./packages/repo-gc-shared) | [![npm](https://img.shields.io/npm/v/repo-gc-shared)](https://www.npmjs.com/package/repo-gc-shared) | Shared types, scoring, thresholds, and reporters used by all packages |
-| [`repo-gc-typescript`](./packages/repo-gc-typescript) | [![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript) | TypeScript/JavaScript plugin — parses with oxc, runs 6 heuristics |
-| [`repo-gc-rust`](./packages/repo-gc-rust) | [![npm](https://img.shields.io/npm/v/repo-gc-rust)](https://www.npmjs.com/package/repo-gc-rust) | Rust analyzer — standalone native binary, also invocable as a plugin |
-| `repo-gc-python` | — | Python plugin — coming soon |
+```bash
+# Scan the current directory — auto-detects all languages
+npx repo-gc scan
 
-### Language Shortcuts
+# Scan a specific language only
+npx repo-gc scan --lang typescript
 
-Each language package has a thin CLI that delegates to the umbrella runner:
+# Shortcuts for language-specific scans
+npx repo-gc-typescript scan      # same as repo-gc scan --lang typescript
+npx repo-gc-rust scan            # same as repo-gc scan --lang rust
 
-```
-npx repo-gc-typescript scan --path .    ≡    npx repo-gc scan --lang typescript --path .
-npx repo-gc-rust scan --path .          ≡    npx repo-gc scan --lang rust --path .
-npx repo-gc-python scan --path .        ≡    npx repo-gc scan --lang python --path .
-```
+# Markdown report — shareable, screenshot-ready
+npx repo-gc scan --format md > REPO_HEALTH.md
 
-The umbrella runner (`npx repo-gc`) auto-detects which languages are present — no `--lang` flag needed if you want all languages analyzed.
+# JSON output for CI pipelines
+npx repo-gc scan --format json > results.json
 
----
+# Token-optimized output for LLM consumption (~73% smaller)
+npx repo-gc scan --format llm > findings.llm.tsv
 
-## Architecture
-
-```
-npx repo-gc (runner)
-  ├─ discovery       → finds workspaces, enumerates files
-  ├─ auto-detection  → scans extensions + manifests, activates plugins
-  ├─ plugins         → language-specific parsing + heuristics → Finding[]
-  ├─ scoring         → computeGlobalScore (shared)
-  └─ formatting      → text, json, markdown, llm (shared)
+# Stricter thresholds for deeper analysis
+npx repo-gc scan --threshold strict
 ```
 
-Each language package is a **plugin** — it exports a single function `analyzeLanguage(files, root, thresholds) → { findings, skipped, errors }`. The runner handles everything else: discovery, ID assignment, scoring, and rendering. Adding a new language is ~200 lines of code.
+The main runner auto-detects which languages are present — no `--lang` flag needed.
+
+> **Note:** The Rust package (`repo-gc-rust`) is a prebuilt native binary. The main runner shells out to it for Rust analysis.
 
 ---
 
@@ -75,29 +65,32 @@ All checks are **fully deterministic** — no LLM calls, no network, no hallucin
 
 ---
 
-## Quick Start
+## Architecture
 
-```bash
-# Scan the current directory — auto-detects all languages (text output)
-npx repo-gc scan
-
-# Scan a specific language only
-npx repo-gc scan --lang typescript
-
-# Markdown report — screenshot-ready, shareable
-npx repo-gc scan --format md > REPO_HEALTH.md
-
-# Token-optimized output for LLM consumption
-npx repo-gc scan --format llm > findings.llm.tsv
-
-# JSON output for CI pipelines
-npx repo-gc scan --format json > results.json
-
-# Stricter thresholds for deeper analysis
-npx repo-gc scan --threshold strict
+```
+npx repo-gc (runner)
+  ├─ discovery       → finds workspaces, enumerates files
+  ├─ auto-detection  → scans extensions + manifests, activates plugins
+  ├─ plugins         → language-specific parsing + heuristics → Finding[]
+  ├─ scoring         → computeGlobalScore (shared)
+  └─ formatting      → text, json, markdown, llm (shared)
 ```
 
-> **Note:** The Rust package (`repo-gc-rust`) is a prebuilt native binary. The TypeScript runner shells out to it for Rust analysis.
+Each language package is a **plugin** — it exports a single function `analyzeLanguage(files, root, thresholds) → { findings, skipped, errors }`. The runner handles everything else: discovery, ID assignment, scoring, and rendering. Adding a new language is ~200 lines of code.
+
+---
+
+## Packages
+
+| Package | Status | Description |
+|---------|--------|-------------|
+| [`repo-gc`](./packages/repo-gc) | [![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc) | Main CLI — auto-detects languages, orchestrates plugins, formats output |
+| [`repo-gc-shared`](./packages/repo-gc-shared) | [![npm](https://img.shields.io/npm/v/repo-gc-shared)](https://www.npmjs.com/package/repo-gc-shared) | Shared types, scoring, thresholds, and reporters used by all packages |
+| [`repo-gc-typescript`](./packages/repo-gc-typescript) | [![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript) | TypeScript/JavaScript plugin — parses with oxc, runs 6 heuristics |
+| [`repo-gc-rust`](./packages/repo-gc-rust) | [![npm](https://img.shields.io/npm/v/repo-gc-rust)](https://www.npmjs.com/package/repo-gc-rust) | Rust analyzer — standalone native binary, invocable as a plugin |
+| `repo-gc-python` | — | Python plugin — coming soon |
+
+Each language plugin is optional — install only what you need. The main runner auto-detects which plugins are available.
 
 ## Understanding Your Scores (0–100)
 
@@ -187,8 +180,6 @@ import { scan } from 'repo-gc';
 const report = await scan({ path: '.', format: 'json', threshold: 'normal', includeTests: false, color: false }, []);
 console.log(report);
 ```
-
-Each language plugin is optional — install only what you need. The umbrella runner auto-detects which plugins are available.
 
 ## Requirements
 

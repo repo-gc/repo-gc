@@ -14,7 +14,7 @@ const args = [subcommand, '--lang', 'typescript', ...restArgs];
 
 const child = spawn(process.execPath, [repoGcCli, ...args], { stdio: 'inherit' });
 child.on('error', (err) => {
-  console.error('repo-gc umbrella runner not found. Install repo-gc alongside repo-gc-typescript.');
+  console.error('repo-gc runner not found. Install repo-gc alongside repo-gc-typescript.');
   process.exit(1);
 });
 child.on('exit', (code) => process.exit(code || 0));

@@ -52,7 +52,7 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
 
   for (const plugin of activePlugins) {
     // Self-discovering plugins handle their own file discovery — skip
-    // umbrella enumeration since their source roots differ from JS packages
+    // file enumeration since their source roots differ from JS packages
     if (plugin.selfDiscovers) continue;
 
     const { files, skipped } = enumerateFiles(

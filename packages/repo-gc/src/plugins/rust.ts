@@ -53,7 +53,15 @@ function normalizeFindings(raw: unknown[]): Finding[] {
   }));
 }
 
-function spawnBinary(binaryPath: string, args: string[]): Promise<{ findings: Finding[]; errors: string[] }> {
+interface RustBinaryOutput {
+  findings: Finding[];
+  errors: string[];
+  filesAnalyzed?: number;
+  totalLines?: number;
+  totalEstimatedTokens?: number;
+}
+
+function spawnBinary(binaryPath: string, args: string[]): Promise<RustBinaryOutput> {
   return new Promise((resolve) => {
     const child = spawn(binaryPath, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -72,7 +80,13 @@ function spawnBinary(binaryPath: string, args: string[]): Promise<{ findings: Fi
       try {
         const parsed = JSON.parse(stdout);
         const rawFindings: unknown[] = parsed.findings || parsed || [];
-        resolve({ findings: normalizeFindings(rawFindings), errors: [] });
+        resolve({
+          findings: normalizeFindings(rawFindings),
+          errors: [],
+          filesAnalyzed: parsed.files_analyzed,
+          totalLines: parsed.total_lines,
+          totalEstimatedTokens: parsed.total_estimated_tokens,
+        });
       } catch {
         resolve({ findings: [], errors: [`Failed to parse Rust binary output: ${stdout.slice(0, 200)}`] });
       }

@@ -14,6 +14,10 @@ export interface AnalysisResult {
   findings: Finding[];
   skipped: number;
   errors: string[];
+  /** Self-discovering plugins report their own file stats */
+  filesAnalyzed?: number;
+  totalLines?: number;
+  totalEstimatedTokens?: number;
 }
 
 export interface LanguagePlugin {

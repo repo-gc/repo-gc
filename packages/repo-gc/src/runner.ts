@@ -84,6 +84,8 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
   const allFindings: Finding[] = [];
   const allErrors: string[] = [];
   let filesAnalyzed = 0;
+  let totalLines = 0;
+  let totalEstimatedTokens = 0;
 
   for (const plugin of detected) {
     const pluginFiles = allFiles.filter((f) => f.language === plugin.name);
@@ -98,7 +100,17 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
       continue;
     }
 
-    filesAnalyzed += pluginFiles.length;
+    // Self-discovering plugins report their own stats; enumerated plugins' stats
+    // come from the pre-enumerated allFiles array
+    if (plugin.selfDiscovers && result.filesAnalyzed !== undefined) {
+      filesAnalyzed += result.filesAnalyzed;
+      totalLines += result.totalLines ?? 0;
+      totalEstimatedTokens += result.totalEstimatedTokens ?? 0;
+    } else {
+      filesAnalyzed += pluginFiles.length;
+      totalLines += pluginFiles.reduce((sum, f) => sum + f.lineCount, 0);
+      totalEstimatedTokens += pluginFiles.reduce((sum, f) => sum + estimateTokens(f.sizeBytes), 0);
+    }
     allErrors.push(...result.errors);
 
     // 5. Assign globally unique IDs
@@ -108,12 +120,10 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
   }
 
   // 6. Scoring
-  const totalLines = allFiles.reduce((sum, f) => sum + f.lineCount, 0);
-  const totalEstimatedTokens = allFiles.reduce((sum, f) => sum + estimateTokens(f.sizeBytes), 0);
-
   allFindings.sort((a, b) => SEVERITY_WEIGHT[b.severity] - SEVERITY_WEIGHT[a.severity]);
 
-  const globalScore = computeGlobalScore(allFindings, allFiles.length, totalEstimatedTokens);
+  const totalFileCount = filesAnalyzed; // already accumulated from either source
+  const globalScore = computeGlobalScore(allFindings, totalFileCount, totalEstimatedTokens);
 
   return {
     findings: allFindings,

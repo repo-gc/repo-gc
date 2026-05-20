@@ -85,7 +85,6 @@ Each language package is a **plugin** — it exports a single function `analyzeL
 | Package | Status | Description |
 |---------|--------|-------------|
 | [`repo-gc`](./packages/repo-gc) | [![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc) | Main CLI — auto-detects languages, orchestrates plugins, formats output |
-| [`repo-gc-shared`](./packages/repo-gc-shared) | [![npm](https://img.shields.io/npm/v/repo-gc-shared)](https://www.npmjs.com/package/repo-gc-shared) | Shared types, scoring, thresholds, and reporters used by all packages |
 | [`repo-gc-typescript`](./packages/repo-gc-typescript) | [![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript) | TypeScript/JavaScript plugin — parses with oxc, runs 6 heuristics |
 | [`repo-gc-rust`](./packages/repo-gc-rust) | [![npm](https://img.shields.io/npm/v/repo-gc-rust)](https://www.npmjs.com/package/repo-gc-rust) | Rust analyzer — standalone native binary, invocable as a plugin |
 | `repo-gc-python` | — | Python plugin — coming soon |

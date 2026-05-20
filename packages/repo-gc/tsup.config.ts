@@ -6,9 +6,9 @@ export default defineConfig({
   target: 'node18',
   clean: true,
   sourcemap: true,
-  dts: true,
+  dts: { resolve: true },
   banner: {
     js: '#!/usr/bin/env node',
   },
-  external: ['repo-gc-shared', 'repo-gc-typescript'],
+  external: ['repo-gc-typescript'],
 });

@@ -6,9 +6,9 @@ export default defineConfig({
   target: 'node18',
   clean: true,
   sourcemap: true,
-  dts: true,
+  dts: { resolve: true },
   banner: {
     js: '#!/usr/bin/env node',
   },
-  external: ['oxc-parser', 'unrs-resolver', 'repo-gc-shared'],
+  external: ['oxc-parser', 'unrs-resolver'],
 });

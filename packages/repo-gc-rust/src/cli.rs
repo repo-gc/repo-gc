@@ -17,6 +17,7 @@ pub enum Commands {
         #[arg(long, value_enum, default_value = "normal")] threshold: Threshold,
         #[arg(long, default_value = "false")] include_tests: bool,
         #[arg(long)] no_color: bool,
+        #[arg(long, default_value = "rust")] lang: String,
     },
     /// Generate an AI Context Efficiency report
     Report {
@@ -24,12 +25,14 @@ pub enum Commands {
         #[arg(long, value_enum, default_value = "text")] format: OutputFormat,
         #[arg(long, value_enum, default_value = "normal")] threshold: Threshold,
         #[arg(long)] include_tests: bool,
+        #[arg(long, default_value = "rust")] lang: String,
     },
     /// Emit findings as JSON (for CI integration)
     Json {
         #[arg(long, default_value = ".")] path: PathBuf,
         #[arg(long, value_enum, default_value = "normal")] threshold: Threshold,
         #[arg(long)] include_tests: bool,
+        #[arg(long, default_value = "rust")] lang: String,
     },
     /// Explain why a file degrades AI context efficiency
     Explain {

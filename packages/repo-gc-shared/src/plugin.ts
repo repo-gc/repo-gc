@@ -24,5 +24,5 @@ export interface LanguagePlugin {
   requiredManifests?: string[];
   /** When true, the plugin handles its own file discovery — the runner skips enumeration */
   selfDiscovers?: boolean;
-  analyzeLanguage(files: SourceFile[], workspaceRoot: string, thresholds: Thresholds): AnalysisResult;
+  analyzeLanguage(files: SourceFile[], workspaceRoot: string, thresholds: Thresholds): AnalysisResult | Promise<AnalysisResult>;
 }

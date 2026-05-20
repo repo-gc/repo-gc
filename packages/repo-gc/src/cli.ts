@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name('repo-gc')
   .description('Multi-language repository hygiene analyzer — find patterns that waste AI context')
-  .version('0.2.0');
+  .version('0.2.2');
 
 async function loadPlugins(): Promise<LanguagePlugin[]> {
   const plugins: LanguagePlugin[] = [];
@@ -91,7 +91,7 @@ program
   .argument('<path>', 'File to analyze')
   .option('--root <root>', 'Workspace root', '.')
   .action(async (filePath, opts) => {
-    console.log(`explain: ${filePath} (root: ${opts.root}) — coming in v0.2.0`);
+    console.log(`explain: ${filePath} (root: ${opts.root}) — coming in v0.2.2`);
   });
 
 program.parse();

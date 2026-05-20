@@ -24,13 +24,13 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Scan { path, format, threshold, include_tests, no_color } => {
+        Commands::Scan { path, format, threshold, include_tests, no_color, .. } => {
             render_report(&analyze(&path, &threshold, include_tests)?, &format, no_color);
         }
-        Commands::Report { path, format, threshold, include_tests } => {
+        Commands::Report { path, format, threshold, include_tests, .. } => {
             render_report(&analyze(&path, &threshold, include_tests)?, &format, false);
         }
-        Commands::Json { path, threshold, include_tests } => {
+        Commands::Json { path, threshold, include_tests, .. } => {
             println!("{}", reporting::json_report::render(&analyze(&path, &threshold, include_tests)?)?);
         }
         Commands::Explain { path, root } => explain_file(&path, &root)?,

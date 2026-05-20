@@ -1,6 +1,6 @@
 {
   "name": "repo-gc",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Repository hygiene analyzer — multi-language AI context efficiency",
   "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",

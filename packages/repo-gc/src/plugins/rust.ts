@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve, join, delimiter } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from 'repo-gc-shared';
 import { FindingKind, Severity } from 'repo-gc-shared';
@@ -10,14 +10,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function findBinary(): string | null {
   // __dirname is packages/repo-gc/dist/ (dev) or node_modules/repo-gc/dist/ (npm)
-  const candidates = [
-    // 1. Bundled in the repo-gc package (bin/repo-gc)
-    resolve(__dirname, '../bin/repo-gc'),
-    // 2. System PATH (cargo install repo-gc-rust)
-    'repo-gc-rust',
-  ];
-  for (const c of candidates) {
-    if (existsSync(c)) return c;
+  const bundled = resolve(__dirname, '../bin/repo-gc');
+  if (existsSync(bundled)) return bundled;
+
+  // Search PATH — the Cargo binary is named 'repo-gc' per [[bin]] in Cargo.toml
+  const pathDirs = (process.env.PATH || '').split(delimiter);
+  for (const dir of pathDirs) {
+    const p = join(dir, 'repo-gc');
+    if (p !== bundled && existsSync(p)) return p;
   }
   return null;
 }
@@ -85,8 +85,8 @@ function spawnBinary(binaryPath: string, args: string[]): Promise<{ findings: Fi
 }
 
 function thresholdToArg(thresholds: Thresholds): string {
-  if (thresholds.contextBombLines <= 300) return 'strict';
-  if (thresholds.contextBombLines >= 500) return 'relaxed';
+  if (thresholds.lineCountLimit <= 300) return 'strict';
+  if (thresholds.lineCountLimit >= 500) return 'relaxed';
   return 'normal';
 }
 

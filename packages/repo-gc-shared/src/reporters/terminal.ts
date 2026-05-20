@@ -36,6 +36,7 @@ export function renderTerminal(report: Report, color: boolean): string {
 
   lines.push('');
   lines.push(c.bold('═══ AI Context Efficiency Report ═══'));
+  lines.push(c.dim(`  repo-gc v${report.version}`));
   lines.push('');
   lines.push(`  Files analyzed: ${report.files_analyzed}  |  Skipped: ${report.files_skipped}  |  Total lines: ${report.total_lines}`);
   lines.push(`  Total estimated tokens: ${report.total_estimated_tokens}  (${gs.context_waste_ratio.toFixed(1)}x Claude session)`);
@@ -69,6 +70,14 @@ export function renderTerminal(report: Report, color: boolean): string {
       if (findings.length > 5) {
         lines.push(`    ${c.dim(`...and ${findings.length - 5} more`)}`);
       }
+    }
+  }
+
+  if (report.errors.length > 0) {
+    lines.push('');
+    lines.push(c.bold(c.red('Errors')));
+    for (const err of report.errors) {
+      lines.push(`  ${c.red('✗')} ${c.dim(err)}`);
     }
   }
 

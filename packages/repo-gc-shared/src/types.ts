@@ -68,4 +68,6 @@ export interface Report {
   files_skipped: number;
   total_lines: number;
   total_estimated_tokens: number;
+  errors: string[];
+  version: string;
 }

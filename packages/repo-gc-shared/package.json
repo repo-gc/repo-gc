@@ -1,6 +1,6 @@
 {
   "name": "repo-gc-shared",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "description": "Shared types, constants, and algorithms for repo-gc analyzers",
   "license": "FSL-1.1-MIT",

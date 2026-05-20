@@ -5,6 +5,7 @@ export function renderLlm(report: Report): string {
   const gs = report.global_score;
 
   const header = [
+    `ver=${report.version}`,
     `fric=${gs.ai_friction_score}`,
     `waste=${gs.context_waste_score}`,
     `ent=${gs.structural_entropy_score}`,
@@ -15,6 +16,9 @@ export function renderLlm(report: Report): string {
     `tok=${report.total_estimated_tokens}`,
   ].join(' ');
   lines.push(header);
+  if (report.errors.length > 0) {
+    lines.push(`err=${report.errors.join('; ')}`);
+  }
 
   for (const f of report.findings) {
     const sev = SEVERITY_LLM[f.severity];

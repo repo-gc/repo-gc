@@ -22,6 +22,7 @@ export interface ScanOptions {
   includeTests: boolean;
   color: boolean;
   languages?: string[];
+  version: string;
 }
 
 export async function scan(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<string> {
@@ -77,7 +78,7 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
   const detected = detectLanguages(allFiles, activePlugins, workspace.root);
 
   if (allFiles.length === 0 && detected.length === 0) {
-    return emptyReport(totalSkipped);
+    return emptyReport(totalSkipped, opts.version);
   }
 
   // 4. Run each detected plugin (with try/catch isolation)
@@ -132,10 +133,12 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
     files_skipped: totalSkipped,
     total_lines: totalLines,
     total_estimated_tokens: totalEstimatedTokens,
+    errors: allErrors,
+    version: opts.version,
   };
 }
 
-function emptyReport(skipped: number): Report {
+function emptyReport(skipped: number, version: string): Report {
   return {
     findings: [],
     global_score: {
@@ -149,5 +152,7 @@ function emptyReport(skipped: number): Report {
     files_skipped: skipped,
     total_lines: 0,
     total_estimated_tokens: 0,
+    errors: [],
+    version,
   };
 }

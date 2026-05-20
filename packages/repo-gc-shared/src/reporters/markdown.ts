@@ -15,6 +15,8 @@ export function renderMarkdown(report: Report): string {
 
   lines.push('# AI Context Efficiency Report');
   lines.push('');
+  lines.push(`> repo-gc v${report.version}`);
+  lines.push('');
   lines.push('## Summary');
   lines.push('');
   lines.push('| Metric | Value |');
@@ -59,6 +61,15 @@ export function renderMarkdown(report: Report): string {
       }
       lines.push('');
     }
+  }
+
+  if (report.errors.length > 0) {
+    lines.push('## Errors');
+    lines.push('');
+    for (const err of report.errors) {
+      lines.push(`- ${err}`);
+    }
+    lines.push('');
   }
 
   return lines.join('\n');

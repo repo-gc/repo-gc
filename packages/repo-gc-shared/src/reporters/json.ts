@@ -2,6 +2,7 @@ import { type Report } from '../types';
 
 export function renderJson(report: Report): string {
   const output = {
+    version: report.version,
     findings: report.findings.map((f) => ({
       id: f.id,
       kind: f.kind,
@@ -25,6 +26,7 @@ export function renderJson(report: Report): string {
     files_skipped: report.files_skipped,
     total_lines: report.total_lines,
     total_estimated_tokens: report.total_estimated_tokens,
+    errors: report.errors,
   };
   return JSON.stringify(output, null, 2);
 }

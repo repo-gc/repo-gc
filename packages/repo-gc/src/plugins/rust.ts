@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, delimiter } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, chmodSync } from 'node:fs';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from 'repo-gc-shared';
 import { FindingKind, Severity } from 'repo-gc-shared';
 import type { Finding, Thresholds } from 'repo-gc-shared';
@@ -11,7 +11,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 function findBinary(): string | null {
   // __dirname is packages/repo-gc/dist/ (dev) or node_modules/repo-gc/dist/ (npm)
   const bundled = resolve(__dirname, '../bin/repo-gc');
-  if (existsSync(bundled)) return bundled;
+  if (existsSync(bundled)) {
+    // npm may strip the execute bit during publish; restore it
+    try { chmodSync(bundled, 0o755); } catch { /* readonly fs */ }
+    return bundled;
+  }
 
   // Search PATH — the Cargo binary is named 'repo-gc' per [[bin]] in Cargo.toml
   const pathDirs = (process.env.PATH || '').split(delimiter);

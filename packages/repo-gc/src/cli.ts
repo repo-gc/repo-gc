@@ -1,14 +1,24 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { Command } from 'commander';
 import { getThresholds, type ThresholdLevel } from 'repo-gc-shared';
 import { scan } from './runner';
 import type { LanguagePlugin } from './plugin';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkgPath = resolve(__dirname, '../package.json');
+const VERSION: string = (() => {
+  try { return JSON.parse(readFileSync(pkgPath, 'utf-8')).version; }
+  catch { return 'unknown'; }
+})();
 
 const program = new Command();
 
 program
   .name('repo-gc')
   .description('Multi-language repository hygiene analyzer — find patterns that waste AI context')
-  .version('0.2.2');
+  .version(VERSION);
 
 async function loadPlugins(): Promise<LanguagePlugin[]> {
   const plugins: LanguagePlugin[] = [];
@@ -42,7 +52,7 @@ program
     const threshold = getThresholds(opts.threshold as ThresholdLevel);
     const languages = opts.lang ? opts.lang.split(',').map((s: string) => s.trim()) : undefined;
     const report = await scan(
-      { path: opts.path, format: opts.format as 'text' | 'json' | 'md' | 'llm', threshold, includeTests: opts.includeTests, color: opts.color !== false, languages },
+      { path: opts.path, format: opts.format as 'text' | 'json' | 'md' | 'llm', threshold, includeTests: opts.includeTests, color: opts.color !== false, languages, version: VERSION },
       plugins,
     );
     process.stdout.write(report);
@@ -61,7 +71,7 @@ program
     const threshold = getThresholds(opts.threshold as ThresholdLevel);
     const languages = opts.lang ? opts.lang.split(',').map((s: string) => s.trim()) : undefined;
     const report = await scan(
-      { path: opts.path, format: opts.format as 'text' | 'json' | 'md' | 'llm', threshold, includeTests: opts.includeTests, color: true, languages },
+      { path: opts.path, format: opts.format as 'text' | 'json' | 'md' | 'llm', threshold, includeTests: opts.includeTests, color: true, languages, version: VERSION },
       plugins,
     );
     process.stdout.write(report);
@@ -79,7 +89,7 @@ program
     const threshold = getThresholds(opts.threshold as ThresholdLevel);
     const languages = opts.lang ? opts.lang.split(',').map((s: string) => s.trim()) : undefined;
     const report = await scan(
-      { path: opts.path, format: 'json', threshold, includeTests: opts.includeTests, color: false, languages },
+      { path: opts.path, format: 'json', threshold, includeTests: opts.includeTests, color: false, languages, version: VERSION },
       plugins,
     );
     process.stdout.write(report);
@@ -91,7 +101,7 @@ program
   .argument('<path>', 'File to analyze')
   .option('--root <root>', 'Workspace root', '.')
   .action(async (filePath, opts) => {
-    console.log(`explain: ${filePath} (root: ${opts.root}) — coming in v0.2.2`);
+    console.log(`explain: ${filePath} (root: ${opts.root}) — coming in v${VERSION}`);
   });
 
 program.parse();

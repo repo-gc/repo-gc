@@ -25,11 +25,11 @@ export interface ScanOptions {
 }
 
 export async function scan(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<string> {
-  const report = analyze(opts, plugins);
+  const report = await analyze(opts, plugins);
   return renderReport(report, opts.format, opts.color);
 }
 
-function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Report {
+async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Report> {
   _idSeq = 0;
 
   // 1. Workspace discovery
@@ -51,6 +51,10 @@ function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Report {
     : plugins;
 
   for (const plugin of activePlugins) {
+    // Self-discovering plugins handle their own file discovery — skip
+    // umbrella enumeration since their source roots differ from JS packages
+    if (plugin.selfDiscovers) continue;
+
     const { files, skipped } = enumerateFiles(
       [...allSourceRoots],
       workspace.root,
@@ -69,12 +73,12 @@ function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Report {
     totalSkipped += skipped;
   }
 
-  if (allFiles.length === 0) {
-    return emptyReport(totalSkipped);
-  }
-
   // 3. Auto-detect which plugins actually match
   const detected = detectLanguages(allFiles, activePlugins, workspace.root);
+
+  if (allFiles.length === 0 && detected.length === 0) {
+    return emptyReport(totalSkipped);
+  }
 
   // 4. Run each detected plugin (with try/catch isolation)
   const allFindings: Finding[] = [];
@@ -83,11 +87,12 @@ function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Report {
 
   for (const plugin of detected) {
     const pluginFiles = allFiles.filter((f) => f.language === plugin.name);
-    if (pluginFiles.length === 0) continue;
+    // Self-discovering plugins don't need pre-enumerated files
+    if (!plugin.selfDiscovers && pluginFiles.length === 0) continue;
 
     let result: AnalysisResult;
     try {
-      result = plugin.analyzeLanguage(pluginFiles, workspace.root, opts.threshold);
+      result = await plugin.analyzeLanguage(pluginFiles, workspace.root, opts.threshold);
     } catch (err) {
       allErrors.push(`${plugin.name}: ${err instanceof Error ? err.message : String(err)}`);
       continue;

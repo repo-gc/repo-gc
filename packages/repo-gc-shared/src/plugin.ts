@@ -22,5 +22,7 @@ export interface LanguagePlugin {
   fileExtensions: string[];
   testFilePatterns: RegExp[];
   requiredManifests?: string[];
+  /** When true, the plugin handles its own file discovery — the runner skips enumeration */
+  selfDiscovers?: boolean;
   analyzeLanguage(files: SourceFile[], workspaceRoot: string, thresholds: Thresholds): AnalysisResult;
 }

@@ -12,12 +12,19 @@ program
 
 async function loadPlugins(): Promise<LanguagePlugin[]> {
   const plugins: LanguagePlugin[] = [];
+
+  // Built-in Rust plugin — always available, requires binary at runtime
+  const { rustPlugin } = await import('./plugins/rust');
+  plugins.push(rustPlugin);
+
+  // Optional TypeScript plugin
   try {
     const { typescriptPlugin } = await import('repo-gc-typescript');
     plugins.push(typescriptPlugin);
   } catch {
     // optional peer dep — not installed
   }
+
   return plugins;
 }
 

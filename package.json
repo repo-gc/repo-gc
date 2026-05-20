@@ -9,7 +9,8 @@
     "build": "pnpm -r --filter './packages/*' build",
     "test": "pnpm -r --filter './packages/*' test",
     "typecheck": "pnpm -r --filter './packages/*' typecheck",
-    "publish:all": "pnpm build && pnpm test && pnpm -r --filter repo-gc-shared publish --access public && pnpm -r --filter repo-gc-typescript publish --access public && pnpm -r --filter repo-gc publish --access public && pnpm -r --filter repo-gc-rust publish --access public"
+    "build:all": "pnpm build",
+    "publish:all": "pnpm build:all && pnpm test && pnpm -r publish --access public"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "unrs-resolver"]

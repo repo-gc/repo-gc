@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.5 (2026-05-20)
+
+### Python Plugin
+- **repo-gc-python**: Python hygiene analyzer with 6 heuristics
+- Spawns `python -m repo_gc_python` as a subprocess for AST analysis
+- CLI shortcut: `npx repo-gc-python scan` (wraps `repo-gc scan --lang python`)
+- Built on Python stdlib (`ast`, `pathlib`) — zero Python dependencies
+- Supports Python >=3.10
+- Detects: context bombs, dead weight, re-export entropy, coupling hotspots, code duplication, unused imports
+
 ## 0.2.0 (2026-05-19)
 
 Initial public release — monorepo architecture with the main CLI runner, shared core, and TypeScript plugin.

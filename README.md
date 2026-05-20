@@ -26,6 +26,7 @@ npx repo-gc scan --lang typescript
 # Shortcuts for language-specific scans
 npx repo-gc-typescript scan      # same as repo-gc scan --lang typescript
 npx repo-gc-rust scan            # same as repo-gc scan --lang rust
+npx repo-gc-python scan          # same as repo-gc scan --lang python
 
 # Markdown report — shareable, screenshot-ready
 npx repo-gc scan --format md > REPO_HEALTH.md
@@ -87,7 +88,7 @@ Each language package is a **plugin** — it exports a single function `analyzeL
 | [`repo-gc`](./packages/repo-gc) | [![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc) | Main CLI — auto-detects languages, orchestrates plugins, formats output |
 | [`repo-gc-typescript`](./packages/repo-gc-typescript) | [![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript) | TypeScript/JavaScript plugin — parses with oxc, runs 6 heuristics |
 | [`repo-gc-rust`](./packages/repo-gc-rust) | [![npm](https://img.shields.io/npm/v/repo-gc-rust)](https://www.npmjs.com/package/repo-gc-rust) | Rust analyzer — standalone native binary, invocable as a plugin |
-| `repo-gc-python` | — | Python plugin — coming soon |
+| `repo-gc-python` | — | Python plugin — AST analysis via Python stdlib, 6 heuristics |
 
 Each language plugin is optional — install only what you need. The main runner auto-detects which plugins are available.
 
@@ -164,6 +165,7 @@ All analysis is **fully offline and deterministic** — no external API calls, n
 npx repo-gc scan                 # auto-detects languages
 npx repo-gc-typescript scan      # TypeScript/JavaScript only
 npx repo-gc-rust scan            # Rust only (native binary)
+npx repo-gc-python scan          # Python only
 ```
 
 ### Install as a dependency

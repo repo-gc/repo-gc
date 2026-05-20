@@ -73,10 +73,12 @@ fn compact_summary(f: &Finding) -> String {
             s
         }
         FindingKind::CouplingHotspot => {
-            // evidence: ["fan_in: N", "fan_out: N"]
+            // evidence: ["fan_in: N", "fan_out: N", "instability: X.XXX", "pattern: label"]
             let fi = ev_val(&f.evidence, "fan_in");
             let fo = ev_val(&f.evidence, "fan_out");
-            format!("in={fi} out={fo}")
+            let istab = ev_val(&f.evidence, "instability");
+            let pat = ev_str(&f.evidence, "pattern");
+            format!("in={fi} out={fo} I={istab} {pat}")
         }
         FindingKind::DeadWeight => {
             // evidence: ["module_path: X", "line_count: N"]
@@ -122,7 +124,14 @@ fn compact_next(f: &Finding) -> String {
             let lc = ev_val(&f.evidence, "line_count");
             format!("split <{lc}ln")
         }
-        FindingKind::CouplingHotspot => "decouple".into(),
+        FindingKind::CouplingHotspot => {
+            match ev_str(&f.evidence, "pattern").as_str() {
+                "api" => "verify api",
+                "orch" => "split deps",
+                _ => "decouple",
+            }
+            .into()
+        }
         FindingKind::DeadWeight => "rm or re-export".into(),
         FindingKind::ReexportEntropy => "flatten re-exports".into(),
         FindingKind::CodeDuplication => "DRY: shared util".into(),
@@ -199,5 +208,93 @@ mod tests {
         };
         let out = render(&r);
         assert!(out.contains("\tH\tOVS\t"), "expected short labels H and OVS");
+    }
+
+    fn coupling_finding(evidence: Vec<&str>) -> Finding {
+        Finding {
+            id: "ch-001".into(),
+            kind: FindingKind::CouplingHotspot,
+            severity: Severity::Medium,
+            confidence: 0.65,
+            path: PathBuf::from("src/api.rs"),
+            summary: "test".into(),
+            reasons: vec![],
+            evidence: evidence.into_iter().map(String::from).collect(),
+            suggested_next_step: "test".into(),
+            estimated_tokens: None,
+        }
+    }
+
+    #[test]
+    fn coupling_compact_summary_api_hub() {
+        let f = coupling_finding(vec![
+            "fan_in: 513",
+            "fan_out: 8",
+            "instability: 0.015",
+            "pattern: api",
+        ]);
+        let r = make_report(vec![f]);
+        let out = render(&r);
+        assert!(out.contains("in=513 out=8 I=0.015 api"), "expected api pattern in summary: {out}");
+    }
+
+    #[test]
+    fn coupling_compact_summary_god_module() {
+        let f = coupling_finding(vec![
+            "fan_in: 50",
+            "fan_out: 40",
+            "instability: 0.444",
+            "pattern: god",
+        ]);
+        let r = make_report(vec![f]);
+        let out = render(&r);
+        assert!(out.contains("in=50 out=40 I=0.444 god"), "expected god pattern in summary: {out}");
+    }
+
+    #[test]
+    fn coupling_compact_next_api_verify() {
+        let f = coupling_finding(vec![
+            "fan_in: 513", "fan_out: 8", "instability: 0.015", "pattern: api",
+        ]);
+        let r = make_report(vec![f]);
+        let out = render(&r);
+        assert!(out.contains("verify api"), "expected 'verify api' next step: {out}");
+    }
+
+    #[test]
+    fn coupling_compact_next_orch_split() {
+        let f = coupling_finding(vec![
+            "fan_in: 2", "fan_out: 20", "instability: 0.909", "pattern: orch",
+        ]);
+        let r = make_report(vec![f]);
+        let out = render(&r);
+        assert!(out.contains("split deps"), "expected 'split deps' next step: {out}");
+    }
+
+    #[test]
+    fn coupling_compact_next_god_decouple() {
+        let f = coupling_finding(vec![
+            "fan_in: 50", "fan_out: 40", "instability: 0.444", "pattern: god",
+        ]);
+        let r = make_report(vec![f]);
+        let out = render(&r);
+        assert!(out.contains("decouple"), "expected 'decouple' next step: {out}");
+    }
+
+    fn make_report(findings: Vec<Finding>) -> Report {
+        Report {
+            findings,
+            global_score: GlobalScore {
+                ai_friction_score: 50,
+                context_waste_score: 50,
+                structural_entropy_score: 0,
+                context_waste_ratio: 0.0,
+                estimated_waste_pct: 0,
+            },
+            files_analyzed: 1,
+            files_skipped: 0,
+            total_lines: 500,
+            total_estimated_tokens: 4000,
+        }
     }
 }

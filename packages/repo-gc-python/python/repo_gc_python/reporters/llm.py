@@ -28,7 +28,9 @@ def _compact_summary(f: Finding) -> str:
     elif f.kind == FindingKind.CouplingHotspot:
         fi = _ev_val(f.evidence, "fan_in")
         fo = _ev_val(f.evidence, "fan_out")
-        return f"in={fi} out={fo}"
+        istab = _ev_val(f.evidence, "instability")
+        pat = _ev_val(f.evidence, "pattern")
+        return f"in={fi} out={fo} I={istab} {pat}"
 
     elif f.kind == FindingKind.DeadWeight:
         mp = _ev_val(f.evidence, "module_path")
@@ -67,6 +69,11 @@ def _compact_next(f: Finding) -> str:
         lc = _ev_val(f.evidence, "line_count")
         return f"split <{lc}ln"
     elif f.kind == FindingKind.CouplingHotspot:
+        pat = _ev_val(f.evidence, "pattern")
+        if pat == "api":
+            return "verify api"
+        elif pat == "orch":
+            return "split deps"
         return "decouple"
     elif f.kind == FindingKind.DeadWeight:
         return "rm or re-export"

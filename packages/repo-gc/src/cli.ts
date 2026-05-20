@@ -38,6 +38,14 @@ async function loadPlugins(): Promise<LanguagePlugin[]> {
     // optional peer dep — not installed
   }
 
+  // Optional Python plugin
+  try {
+    const { pythonPlugin } = await import('repo-gc-python');
+    plugins.push(pythonPlugin);
+  } catch {
+    // optional peer dep — not installed
+  }
+
   return plugins;
 }
 

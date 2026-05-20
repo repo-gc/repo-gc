@@ -24,6 +24,7 @@
     "prepublishOnly": "pnpm build && cp ../../target/release/repo-gc bin/repo-gc && chmod +x bin/repo-gc"
   },
   "dependencies": {
+    "repo-gc-python": "workspace:*",
     "repo-gc-typescript": "workspace:*",
     "commander": "^14.0.3",
     "globby": "^15.0.0",

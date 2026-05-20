@@ -15,25 +15,20 @@
     ".": "./dist/index.js"
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "bin"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build && cp ../../target/release/repo-gc bin/repo-gc"
   },
   "dependencies": {
     "repo-gc-shared": "workspace:*",
+    "repo-gc-typescript": "workspace:*",
     "commander": "^14.0.0",
     "globby": "^14.0.0",
     "picocolors": "^1.1.0"
-  },
-  "peerDependencies": {
-    "repo-gc-typescript": "workspace:*"
-  },
-  "peerDependenciesMeta": {
-    "repo-gc-typescript": { "optional": true }
   },
   "devDependencies": {
     "tsup": "^8.0.0",

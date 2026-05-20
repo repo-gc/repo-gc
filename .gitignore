@@ -7,3 +7,4 @@ deepclaude.sh
 packages/repo-gc-typescript/dist/
 packages/repo-gc/dist/
 packages/repo-gc-shared/dist/
+packages/repo-gc/bin/

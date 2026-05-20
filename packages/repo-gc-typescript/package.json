@@ -1,7 +1,7 @@
 {
   "name": "repo-gc-typescript",
   "version": "0.2.0",
-  "description": "TypeScript/JavaScript plugin for repo-gc — detects oversized files, dead modules, coupling hotspots, barrel re-exports, duplicate code, and unused imports",
+  "description": "TypeScript/JavaScript plugin for repo-gc — thin CLI delegates to repo-gc --lang typescript",
   "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
   "author": "repo-gc authors",
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "repo-gc-shared": "workspace:*",
+    "repo-gc": "workspace:*",
     "oxc-parser": "^0.132.0",
     "unrs-resolver": "^1.2.0"
   },

@@ -9,14 +9,12 @@ import type { Finding, Thresholds } from 'repo-gc-shared';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function findBinary(): string | null {
-  // 1. Development: monorepo root target/release
-  //    __dirname is packages/repo-gc/dist/ → ../../../ goes to repo root
+  // __dirname is packages/repo-gc/dist/ (dev) or node_modules/repo-gc/dist/ (npm)
   const candidates = [
-    resolve(__dirname, '../../../target/release/repo-gc'),
+    // 1. Bundled in the repo-gc package (bin/repo-gc)
+    resolve(__dirname, '../bin/repo-gc'),
     // 2. System PATH (cargo install repo-gc-rust)
     'repo-gc-rust',
-    // 3. Installed alongside as npm package (in node_modules)
-    resolve(__dirname, '../../repo-gc-rust/bin/repo-gc'),
   ];
   for (const c of candidates) {
     if (existsSync(c)) return c;
@@ -107,7 +105,7 @@ export const rustPlugin: LanguagePlugin = {
   ): Promise<AnalysisResult> {
     const binary = findBinary();
     if (!binary) {
-      return { findings: [], skipped: 0, errors: ['Rust binary not found. Build with `cargo build --release` or install with `cargo install repo-gc-rust`.'] };
+      return { findings: [], skipped: 0, errors: ['Rust binary not found. Install repo-gc-rust alongside repo-gc, or build from source with `cargo build --release`.'] };
     }
 
     const args = [

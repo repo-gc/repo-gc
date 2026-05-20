@@ -38,6 +38,12 @@ importers:
 
   packages/repo-gc-python: {}
 
+  packages/repo-gc-rust:
+    dependencies:
+      repo-gc:
+        specifier: workspace:*
+        version: link:../repo-gc
+
   packages/repo-gc-shared:
     dependencies:
       picocolors:
@@ -59,6 +65,9 @@ importers:
       oxc-parser:
         specifier: ^0.132.0
         version: 0.132.0
+      repo-gc:
+        specifier: workspace:*
+        version: link:../repo-gc
       repo-gc-shared:
         specifier: workspace:*
         version: link:../repo-gc-shared

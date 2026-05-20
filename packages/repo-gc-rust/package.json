@@ -1,11 +1,11 @@
 {
   "name": "repo-gc-rust",
   "version": "0.2.0",
-  "description": "Rust plugin for repo-gc — AI-era repository hygiene analyzer for Rust codebases",
+  "description": "Rust CLI for repo-gc — delegates to repo-gc --lang rust",
   "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
   "author": "repo-gc authors",
-  "keywords": ["repo-gc", "rust", "hygiene", "ai", "llm", "context", "code-quality", "analyzer", "plugin", "cargo"],
+  "keywords": ["repo-gc", "rust", "hygiene", "ai", "llm", "context", "code-quality", "analyzer", "cli-wrapper"],
   "type": "module",
   "bin": {
     "repo-gc-rust": "./bin/repo-gc-rust.js"
@@ -13,10 +13,9 @@
   "files": ["bin"],
   "scripts": {
     "test": "cargo test",
-    "build": "cargo build --release",
-    "prepublishOnly": "echo 'Build the Rust binary before publishing: cargo build --release'"
+    "build": "cargo build --release"
   },
-  "optionalDependencies": {
-    "repo-gc": "^0.2.0"
+  "dependencies": {
+    "repo-gc": "workspace:*"
   }
 }

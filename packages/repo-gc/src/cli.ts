@@ -1,3 +1,6 @@
+// Node 25+ emits url.parse() deprecation from internals — not fixable here
+process.noDeprecation = true;
+
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';

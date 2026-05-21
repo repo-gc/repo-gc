@@ -44,7 +44,7 @@ def analyze(
         id=f"cb-{counter:03d}",
         kind=FindingKind.ContextBomb,
         severity=severity,
-        confidence=0.95 if pfile.line_count >= limit * 2 else 0.75,
+        confidence=0.95 if pfile.line_count >= limit * 4 else 0.85 if pfile.line_count >= limit * 2 else 0.75,
         path=str(pfile.relative_path),
         summary="",
         reasons=[],

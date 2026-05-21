@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-syn = { version = "2", features = ["full", "visit"] }
+syn = { version = "2", features = ["full", "visit", "fold"] }
 walkdir = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

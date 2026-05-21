@@ -32,9 +32,10 @@ function enrichFinding(f: Finding): void {
 
     case FindingKind.DeadWeight: {
       const lines = d.line_count || '?';
+      const tokens = d.estimated_tokens || '?';
       const modulePath = d.module_path || f.path;
 
-      f.summary = `Dead module — ~${lines} lines loaded into agent context but never referenced`;
+      f.summary = `Dead module — ~${lines} lines / ~${tokens} tokens loaded into agent context but never referenced`;
 
       f.reasons = [
         `Module '${modulePath}' is not imported by any other module — wasted context capacity`,

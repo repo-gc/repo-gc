@@ -12,6 +12,10 @@ from ..types import Finding, FindingKind, Severity
 
 MIN_UNUSED = 2
 
+# Names commonly referenced by compile-time transforms rather than user code.
+# Empty for Python — the language has no JSX-like implicit usage.
+COMPILER_NAMES: frozenset[str] = frozenset()
+
 
 def analyze(
     pfile: PythonFile,
@@ -19,7 +23,11 @@ def analyze(
     _threshold: Threshold,
     counter: int,
 ) -> Finding | None:
-    unused = [name for name in info.import_leaf_names if name not in info.all_identifiers]
+    unused = [
+        name
+        for name in info.import_leaf_names
+        if name not in COMPILER_NAMES and name not in info.all_identifiers
+    ]
 
     if len(unused) < MIN_UNUSED:
         return None

@@ -26,7 +26,7 @@ class FileInfo:
     function_count: int = 0
     public_function_count: int = 0  # top-level functions (all top-level defs in Python)
     class_count: int = 0
-    function_bodies: list[tuple[str, str]] = field(default_factory=list)  # (name, normalized_body)
+    function_bodies: list[tuple[str, str, str]] = field(default_factory=list)  # (name, raw_body, normalized_body)
     imported_modules: list[str] = field(default_factory=list)  # resolved module path strings
     import_leaf_names: list[str] = field(default_factory=list)  # final names brought into scope
     all_identifiers: set[str] = field(default_factory=set)  # all names referenced in file body
@@ -143,15 +143,16 @@ def _resolve_import(
 # ---------------------------------------------------------------------------
 
 
-def _normalize_body(body: list[ast.stmt]) -> str:
+def _normalize_body(body: list[ast.stmt]) -> tuple[str, str]:
     """Normalize a function body for duplication detection.
 
-    Uses ``ast.unparse()`` then strips *all* whitespace so that structurally
-    identical functions with different formatting produce the same string.
+    Returns ``(raw_body, normalized_body)`` where *raw_body* is the
+    ``ast.unparse`` output (valid Python, may contain whitespace) and
+    *normalized_body* is the same with all whitespace stripped.
     """
     module = ast.Module(body=body, type_ignores=[])
     text = ast.unparse(module)
-    return "".join(text.split())
+    return text, "".join(text.split())
 
 
 # ---------------------------------------------------------------------------
@@ -186,12 +187,14 @@ class _FileVisitor(ast.NodeVisitor):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.file_info.function_count += 1
         self.file_info.public_function_count += 1  # top-level = public in Python
-        self.file_info.function_bodies.append((node.name, _normalize_body(node.body)))
+        raw_body, norm_body = _normalize_body(node.body)
+        self.file_info.function_bodies.append((node.name, raw_body, norm_body))
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self.file_info.function_count += 1
         self.file_info.public_function_count += 1
-        self.file_info.function_bodies.append((node.name, _normalize_body(node.body)))
+        raw_body, norm_body = _normalize_body(node.body)
+        self.file_info.function_bodies.append((node.name, raw_body, norm_body))
 
     # -- classes ------------------------------------------------------------
 

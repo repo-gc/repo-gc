@@ -6,6 +6,10 @@ use crate::types::{Finding, FindingKind, Severity};
 /// Minimum unused imports before emitting a finding (reduces noise from macros/derives).
 const MIN_UNUSED: usize = 2;
 
+/// Names commonly referenced by compile-time transforms (macros, derives) rather
+/// than user code.  Empty for Rust — the language has no JSX-like implicit usage.
+const COMPILER_NAMES: &[&str] = &[];
+
 pub fn analyze(
     file: &RustFile,
     structure: &FileStructure,
@@ -15,7 +19,9 @@ pub fn analyze(
     let unused: Vec<&String> = structure
         .use_leaf_names
         .iter()
-        .filter(|name| !structure.all_identifiers.contains(*name))
+        .filter(|name| {
+            !COMPILER_NAMES.contains(&name.as_str()) && !structure.all_identifiers.contains(*name)
+        })
         .collect();
 
     if unused.len() < MIN_UNUSED {

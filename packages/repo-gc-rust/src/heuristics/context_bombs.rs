@@ -46,7 +46,13 @@ pub fn analyze(
         id: format!("cb-{:03}", counter),
         kind: FindingKind::ContextBomb,
         severity,
-        confidence: if file.line_count >= limit * 2 { 0.95 } else { 0.75 },
+        confidence: if file.line_count >= limit * 4 {
+            0.95
+        } else if file.line_count >= limit * 2 {
+            0.85
+        } else {
+            0.75
+        },
         path: file.relative_path.clone(),
         summary: String::new(),
         reasons: vec![],

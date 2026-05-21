@@ -71,3 +71,47 @@ export interface Report {
   errors: string[];
   version: string;
 }
+
+// Language-agnostic data interfaces for centralized heuristics.
+// Plugins produce these from their language-specific parsers.
+
+export interface FunctionBodyData {
+  name: string;
+  rawBody: string;
+  /** Identifier-normalized + whitespace-stripped body for Type 2 clone detection. */
+  normalizedBody: string;
+}
+
+export interface FileData {
+  path: string;
+  relativePath: string;
+  lineCount: number;
+  sizeBytes: number;
+  modulePath: string;
+  isEntryPoint: boolean;
+  /** Package init file — __init__.py, mod.rs, lib.rs, index.ts */
+  isPackageInit: boolean;
+  functionCount: number;
+  classCount: number;
+  implBlockCount: number;
+  /** Raw import specifiers for graph building (e.g. "./utils", "react") */
+  imports: string[];
+  /** Leaf names brought into scope by imports (for unused-import detection) */
+  importedNames: string[];
+  /** All identifiers referenced in the file body */
+  allIdentifiers: Set<string>;
+  /** Rust `mod` declarations — empty for non-Rust languages */
+  moduleDeclarations: string[];
+  /** Python `__all__` export list — null for non-Python languages */
+  allExport: string[] | null;
+  /** Re-export entries (barrel files) */
+  exports: Array<{ sourcePath: string; itemCount: number; isWildcard: boolean }>;
+  /** Function bodies for duplication detection */
+  functionBodies: FunctionBodyData[];
+}
+
+/** Cross-file import graph — computed by plugins from FileData[].imports */
+export interface GraphData {
+  fanIn: Map<string, number>;
+  fanOut: Map<string, number>;
+}

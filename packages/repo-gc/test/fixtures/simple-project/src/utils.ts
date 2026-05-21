@@ -11,5 +11,6 @@ export function alsoUnused(): string {
 export function doThingOne(): string {
   const x = "hello world";
   const y = "goodbye world";
-  return x + y;
+  const z = "farewell world";
+  return x + y + z;
 }

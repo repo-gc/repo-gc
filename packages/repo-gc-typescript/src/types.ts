@@ -23,6 +23,8 @@ export interface FileInfo {
   functionCount: number;
   publicFunctionCount: number;
   functionBodies: Map<string, string>;
+  /** Raw (un-normalized) function body text for AST-aware analysis. */
+  functionBodiesRaw: Map<string, string>;
   imports: string[];
   exports: ReExportEntry[];
   allIdentifiers: Set<string>;

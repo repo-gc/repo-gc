@@ -104,6 +104,7 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
   const importedNames: string[] = [];
   const allIdentifiers = new Set<string>();
   const functionBodies = new Map<string, string>();
+  const functionBodiesRaw = new Map<string, string>();
   const jsxIdentifiers = new Set<string>();
   let functionCount = 0;
 
@@ -167,6 +168,7 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
           if (normalized.length >= 40) {
             const fnName = func.id?.name || `anon_${func.start}`;
             functionBodies.set(fnName, normalized);
+            functionBodiesRaw.set(fnName, bodyText);
           }
         }
         break;
@@ -181,6 +183,7 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
           const normalized = normalizeBody(bodyText);
           if (normalized.length >= 40) {
             functionBodies.set(`anon_${arrow.start}`, normalized);
+            functionBodiesRaw.set(`anon_${arrow.start}`, bodyText);
           }
         }
         break;
@@ -225,6 +228,7 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
       functionCount,
       publicFunctionCount: 0, // would need scope analysis for export tracking
       functionBodies,
+      functionBodiesRaw,
       imports,
       exports,
       allIdentifiers,
@@ -244,6 +248,7 @@ function emptyFileInfo(file: SourceFile, workspaceRoot: string): FileInfo {
     functionCount: 0,
     publicFunctionCount: 0,
     functionBodies: new Map(),
+    functionBodiesRaw: new Map(),
     imports: [],
     exports: [],
     allIdentifiers: new Set(),

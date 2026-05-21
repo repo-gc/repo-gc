@@ -5,7 +5,14 @@ export {
   FindingKind,
   FINDING_KIND_LLM,
 } from './types';
-export type { Finding, GlobalScore, Report } from './types';
+export type {
+  Finding,
+  GlobalScore,
+  Report,
+  FunctionBodyData,
+  FileData,
+  GraphData,
+} from './types';
 
 export { type ThresholdLevel, type Thresholds, getThresholds } from './threshold';
 
@@ -26,3 +33,18 @@ export {
   outputParseFailed,
   spawnFailed,
 } from './messages';
+
+// Shared heuristic functions (language-agnostic)
+export {
+  analyzeContextBombs,
+  analyzeDeadWeight,
+  analyzeCoupling,
+  analyzeReexportEntropy,
+  analyzeDuplication,
+  analyzeUnusedImports,
+} from './heuristics';
+export type {
+  DeadWeightOptions,
+  DuplicationOptions,
+  UnusedImportsOptions,
+} from './heuristics';

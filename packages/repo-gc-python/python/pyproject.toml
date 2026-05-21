@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "repo-gc-python"
-version = "0.1.0"
+version = "0.2.5"
 description = "Python repository hygiene analyzer — find patterns that waste AI context"
 requires-python = ">=3.10"
 

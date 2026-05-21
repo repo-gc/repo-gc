@@ -7,3 +7,5 @@ export { analyzeDuplication } from './duplication';
 export type { DuplicationOptions } from './duplication';
 export { analyzeUnusedImports } from './unused-imports';
 export type { UnusedImportsOptions } from './unused-imports';
+export { runHeuristics } from './run-heuristics';
+export type { PluginHeuristicOptions, HeuristicsResult } from './run-heuristics';

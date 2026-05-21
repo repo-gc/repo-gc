@@ -26,8 +26,11 @@ export {
   analyzeDuplication,
   analyzeUnusedImports,
 } from './shared/heuristics';
+export { runHeuristics } from './shared/heuristics';
 export type {
   DeadWeightOptions,
   DuplicationOptions,
   UnusedImportsOptions,
+  PluginHeuristicOptions,
+  HeuristicsResult,
 } from './shared/heuristics';

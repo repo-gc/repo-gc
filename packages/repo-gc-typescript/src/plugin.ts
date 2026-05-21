@@ -1,12 +1,5 @@
-import type { Finding, LanguagePlugin, AnalysisResult, SourceFile, Thresholds } from 'repo-gc';
-import {
-  analyzeContextBombs,
-  analyzeDeadWeight,
-  analyzeCoupling,
-  analyzeReexportEntropy,
-  analyzeDuplication,
-  analyzeUnusedImports,
-} from 'repo-gc';
+import type { LanguagePlugin, AnalysisResult, SourceFile, Thresholds } from 'repo-gc';
+import { runHeuristics } from 'repo-gc';
 import { parseAllFiles } from './parser';
 import { ImportGraph } from './graph';
 import { toFileData } from './adapter';
@@ -81,57 +74,12 @@ export const typescriptPlugin: LanguagePlugin = {
     const graphData = { fanIn: graph.fanIn, fanOut: graph.fanOut };
 
     // Run shared heuristics
-    const findings: Finding[] = [];
-    const idCounter = { value: 1 };
+    const hr = runHeuristics(fileDataList, graphData, thresholds, {
+      compilerNames: COMPILER_NAMES,
+      configPatterns: CONFIG_PATTERNS,
+      testNamePatterns: ['for_test', 'forTest'],
+    });
 
-    for (const fd of fileDataList) {
-      try {
-        const cb = analyzeContextBombs(fd, thresholds, idCounter);
-        if (cb) findings.push(cb);
-      } catch (e) {
-        errors.push(`${fd.relativePath}: context-bombs: ${e instanceof Error ? e.message : String(e)}`);
-      }
-
-      try {
-        const re = analyzeReexportEntropy(fd, thresholds, idCounter);
-        if (re) findings.push(re);
-      } catch (e) {
-        errors.push(`${fd.relativePath}: reexport-entropy: ${e instanceof Error ? e.message : String(e)}`);
-      }
-
-      try {
-        const cp = analyzeCoupling(fd, graphData, thresholds, idCounter);
-        findings.push(...cp);
-      } catch (e) {
-        errors.push(`${fd.relativePath}: coupling: ${e instanceof Error ? e.message : String(e)}`);
-      }
-
-      try {
-        const ui = analyzeUnusedImports(fd, idCounter, { compilerNames: COMPILER_NAMES });
-        if (ui) findings.push(ui);
-      } catch (e) {
-        errors.push(`${fd.relativePath}: unused-imports: ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-
-    try {
-      const dw = analyzeDeadWeight(fileDataList, graphData, idCounter, {
-        configPatterns: CONFIG_PATTERNS,
-      });
-      findings.push(...dw);
-    } catch (e) {
-      errors.push(`dead-weight: ${e instanceof Error ? e.message : String(e)}`);
-    }
-
-    try {
-      const dup = analyzeDuplication(fileDataList, idCounter, {
-        testNamePatterns: ['for_test', 'forTest'],
-      });
-      findings.push(...dup);
-    } catch (e) {
-      errors.push(`duplication: ${e instanceof Error ? e.message : String(e)}`);
-    }
-
-    return { findings, skipped: skippedCount, errors };
+    return { findings: hr.findings, skipped: skippedCount, errors: [...errors, ...hr.errors] };
   },
 };

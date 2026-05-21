@@ -26,15 +26,11 @@ export function analyze(
     severity = Severity.Low;
   }
 
-  const reasons: string[] = [
-    `${reExports.length} re-export declarations (${totalItems} total items)`,
+  const evidence = [
+    `reexport_count: ${reExports.length}`,
+    `total_items: ${totalItems}`,
+    `has_wildcard: ${wildcardCount > 0}`,
   ];
-  if (wildcardCount > 0) {
-    reasons.push(`${wildcardCount} wildcard re-exports (export * from) hide the actual public API`);
-  }
-
-  const evidence = [`${reExports.length} re-exports, ${totalItems} items`];
-  if (wildcardCount > 0) evidence.push(`${wildcardCount} wildcards`);
 
   return {
     id: `rx-${String(idCounter.value++).padStart(3, '0')}`,
@@ -42,9 +38,9 @@ export function analyze(
     severity,
     confidence: 0.8,
     path: info.relativePath,
-    summary: `Barrel file with ${reExports.length} re-exports (${totalItems} items)`,
-    reasons,
+    summary: '',
+    reasons: [],
     evidence,
-    suggested_next_step: 'Flatten the re-export chain — barrel files degrade LLM path resolution',
+    suggested_next_step: '',
   };
 }

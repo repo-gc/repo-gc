@@ -26,14 +26,6 @@ pub fn analyze(
         Severity::Low
     };
 
-    let mut reasons = vec![
-        format!("{} pub use declarations", pub_use_count),
-        format!("{} total re-exported symbols", total_items),
-    ];
-    if has_wildcard {
-        reasons.push("Contains wildcard re-exports (pub use foo::*)".to_string());
-    }
-
     *counter += 1;
     Some(Finding {
         id: format!("re-{:03}", counter),
@@ -41,20 +33,14 @@ pub fn analyze(
         severity,
         confidence: 0.8,
         path: file.relative_path.clone(),
-        summary: format!(
-            "Re-export chain — {} symbols via pub use, agents traverse multiple files to resolve each import",
-            total_items
-        ),
-        reasons,
+        summary: String::new(),
+        reasons: vec![],
         evidence: vec![
-            format!("pub_use_count: {}", pub_use_count),
-            format!("total_reexported_items: {}", total_items),
+            format!("reexport_count: {}", pub_use_count),
+            format!("total_items: {}", total_items),
             format!("has_wildcard: {}", has_wildcard),
         ],
-        suggested_next_step: format!(
-            "Flatten the re-export chain in {} — barrel files degrade LLM path resolution",
-            file.relative_path.display()
-        ),
+        suggested_next_step: String::new(),
         estimated_tokens: None,
     })
 }

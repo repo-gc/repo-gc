@@ -34,21 +34,15 @@ pub fn analyze(
         id: format!("ui-{:03}", counter),
         kind: FindingKind::UnusedImport,
         severity,
-        // Low confidence: derive macros and proc-macros may reference names invisibly
         confidence: 0.65,
         path: file.relative_path.clone(),
-        summary: format!(
-            "Zombie imports — {} unused names inflate token usage in every context window: {}",
-            unused.len(),
-            preview.join(", ")
-        ),
-        reasons: vec![format!(
-            "{} imported names not referenced in file body; macros/derives may cause false positives",
-            unused.len()
-        )],
-        evidence: unused.iter().map(|n| format!("imported but unreferenced: {n}")).collect(),
-        suggested_next_step: "Remove zombie imports to reduce token waste, or verify they are needed by derive macros"
-            .into(),
+        summary: String::new(),
+        reasons: vec![],
+        evidence: vec![
+            format!("unused_count: {}", unused.len()),
+            format!("preview: {}", preview.join(", ")),
+        ],
+        suggested_next_step: String::new(),
         estimated_tokens: None,
     })
 }

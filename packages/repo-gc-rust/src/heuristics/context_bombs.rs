@@ -28,12 +28,17 @@ pub fn analyze(
     };
 
     let estimated_tokens = estimate_tokens(file.size_bytes);
-    let mut reasons = vec![format!("{} lines (limit: {})", file.line_count, limit)];
+
+    let mut evidence = vec![
+        format!("line_count: {}", file.line_count),
+        format!("estimated_tokens: {}", estimated_tokens),
+        format!("limit: {}", limit),
+    ];
     if structure.function_count > 10 {
-        reasons.push(format!("{} functions defined", structure.function_count));
+        evidence.push(format!("function_count: {}", structure.function_count));
     }
     if structure.impl_block_count > 3 {
-        reasons.push(format!("{} impl blocks", structure.impl_block_count));
+        evidence.push(format!("impl_block_count: {}", structure.impl_block_count));
     }
 
     *counter += 1;
@@ -43,20 +48,10 @@ pub fn analyze(
         severity,
         confidence: if file.line_count >= limit * 2 { 0.95 } else { 0.75 },
         path: file.relative_path.clone(),
-        summary: format!(
-            "Oversized file — {} lines / ~{} tokens, each AI edit re-reads this entire file",
-            file.line_count, estimated_tokens
-        ),
-        reasons,
-        evidence: vec![
-            format!("line_count: {}", file.line_count),
-            format!("estimated_tokens: {}", estimated_tokens),
-        ],
-        suggested_next_step: format!(
-            "Split {} into smaller modules (target <{} lines each)",
-            file.relative_path.display(),
-            limit
-        ),
+        summary: String::new(),
+        reasons: vec![],
+        evidence,
+        suggested_next_step: String::new(),
         estimated_tokens: Some(estimated_tokens),
     })
 }
@@ -101,7 +96,8 @@ mod tests {
     fn high_at_2x() {
         let r = analyze(&f(1000, 40000), &s(30, 5), &Threshold::Normal, &mut 0).unwrap();
         assert_eq!(r.severity, Severity::High);
-        assert!(r.reasons.iter().any(|r| r.contains("30 functions")));
+        assert!(r.evidence.iter().any(|e| e.contains("function_count: 30")));
+        assert!(r.evidence.iter().any(|e| e.contains("impl_block_count: 5")));
     }
     #[test]
     fn critical_at_4x() {

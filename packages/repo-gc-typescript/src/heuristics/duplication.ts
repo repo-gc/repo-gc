@@ -34,12 +34,15 @@ export function analyze(infos: FileInfo[], idCounter: { value: number }): Findin
       kind: FindingKind.CodeDuplication,
       severity,
       confidence: 0.85,
-      path: distinctFiles[0], // primary location
-      summary: `Duplicate function body in ${distinctFiles.length} files: ${entry.name}`,
-      reasons: [`Same function body found in ${distinctFiles.length} distinct files`],
-      evidence: distinctFiles.slice(0, 5).map((f) => `Duplicate in: ${f}`),
-      suggested_next_step:
-        'DRY up — extract the duplicated logic into a shared utility function or trait',
+      path: distinctFiles[0],
+      summary: '',
+      reasons: [],
+      evidence: [
+        `file_count: ${distinctFiles.length}`,
+        `fn_name: ${entry.name}`,
+        `files: ${distinctFiles.slice(0, 5).join(', ')}`,
+      ],
+      suggested_next_step: '',
     });
   }
 

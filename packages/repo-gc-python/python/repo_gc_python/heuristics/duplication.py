@@ -39,7 +39,7 @@ def analyze_duplicates(infos: list[FileInfo], counter: int) -> list[Finding]:
             severity = Severity.Low
 
         counter += 1
-        evidence = [f"{path} :: {name}" for path, name in locations[:4]]
+        files_list = [path for path, _ in locations[:5]]
 
         findings.append(
             Finding(
@@ -48,18 +48,14 @@ def analyze_duplicates(infos: list[FileInfo], counter: int) -> list[Finding]:
                 severity=severity,
                 confidence=0.85,
                 path=locations[0][0],
-                summary=(
-                    f"Duplicate logic — fn `{locations[0][1]}` copied across "
-                    f"{file_count} files, AI edits will not propagate"
-                ),
-                reasons=[
-                    f"Identical function body found in {file_count} different files — "
-                    f"AI edits will not propagate"
+                summary="",
+                reasons=[],
+                evidence=[
+                    f"file_count: {file_count}",
+                    f"fn_name: {locations[0][1]}",
+                    f"files: {', '.join(files_list)}",
                 ],
-                evidence=evidence,
-                suggested_next_step=(
-                    "DRY it up: extract duplicated logic into a shared utility function"
-                ),
+                suggested_next_step="",
                 estimated_tokens=None,
             )
         )

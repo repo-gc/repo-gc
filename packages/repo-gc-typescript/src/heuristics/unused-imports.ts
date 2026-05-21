@@ -36,13 +36,12 @@ export function analyze(
     severity,
     confidence: 0.65,
     path: info.relativePath,
-    summary: `${unusedNames.length} unused imports: ${unusedNames.slice(0, 5).join(', ')}`,
-    reasons: [
-      `These names are imported but never referenced in the file body`,
-      'If needed by a macro, derive, or JSX transform, they can be ignored',
+    summary: '',
+    reasons: [],
+    evidence: [
+      `unused_count: ${unusedNames.length}`,
+      `preview: ${unusedNames.slice(0, 5).join(', ')}`,
     ],
-    evidence: unusedNames.map((n) => `"${n}" imported but unused`),
-    suggested_next_step:
-      'Remove the unused imports, or verify they are needed by compile-time transforms',
+    suggested_next_step: '',
   };
 }

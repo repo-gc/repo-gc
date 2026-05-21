@@ -27,93 +27,29 @@ pub fn analyze(
     let fan_in_over = fan_in >= in_limit;
     let fan_out_over = fan_out >= out_limit;
 
-    let (severity, confidence, summary, suggested_next_step, pattern_label, i_interpretation) =
+    let (severity, confidence, pattern_label) =
         match (fan_in_over, fan_out_over) {
             (true, false) => {
-                // API/dispatch hub: high fan-in, low fan-out — intentionally stable
-                (
-                    Severity::Medium,
-                    0.65,
-                    format!(
-                        "Wide API surface — fan-in={fi}, fan-out={fo}, I={i:.2}. This looks like an intentional API/dispatch hub — verify it's not accidental coupling.",
-                        fi = fan_in,
-                        fo = fan_out,
-                        i = i,
-                    ),
-                    format!(
-                        "If this is an intentional API/dispatch hub, this is fine — no action needed. Otherwise, split callers across focused interfaces ({} → {} dependents).",
-                        file.relative_path.display(),
-                        fan_in,
-                    ),
-                    "api",
-                    if i < 0.1 { "very stable (API-like)" } else { "stable (API-like)" },
-                )
+                (Severity::Medium, 0.65, "api")
             }
             (false, true) => {
-                // Over-orchestrator: high fan-out, low fan-in — depends on too many peers
                 let sev = if fan_out >= out_limit * 3 {
                     Severity::High
                 } else {
                     Severity::Medium
                 };
-                (
-                    sev,
-                    0.70,
-                    format!(
-                        "High dependency fan-out ({fo}), low fan-in ({fi}), I={i:.2}. This module imports many peers — consider decomposing.",
-                        fi = fan_in,
-                        fo = fan_out,
-                        i = i,
-                    ),
-                    "Decompose into focused modules with fewer dependencies each.".into(),
-                    "orch",
-                    if i > 0.9 { "very unstable (consumer-like)" } else { "unstable (consumer-like)" },
-                )
+                (sev, 0.70, "orch")
             }
             (true, true) => {
-                // God module: both dimensions exceed thresholds
                 let sev = if fan_in >= in_limit * 3 || fan_out >= out_limit * 2 {
                     Severity::High
                 } else {
                     Severity::Medium
                 };
-                (
-                    sev,
-                    0.85,
-                    format!(
-                        "Dependency concentration — fan-in={fi}, fan-out={fo}, I={i:.2}. High change-impact surface AND high dependency count.",
-                        fi = fan_in,
-                        fo = fan_out,
-                        i = i,
-                    ),
-                    format!(
-                        "Extract an interface to decouple {} from its dependents.",
-                        file.relative_path.display()
-                    ),
-                    "god",
-                    "balanced",
-                )
+                (sev, 0.85, "god")
             }
-            (false, false) => unreachable!(), // caught by guard above
+            (false, false) => unreachable!(),
         };
-
-    let mut reasons = vec![];
-    if fan_in_over {
-        reasons.push(format!(
-            "Fan-in: {} modules import this (limit: {})",
-            fan_in, in_limit
-        ));
-    }
-    if fan_out_over {
-        reasons.push(format!(
-            "Fan-out: imports {} modules (limit: {})",
-            fan_out, out_limit
-        ));
-    }
-    reasons.push(format!(
-        "Instability I={:.3} — {}",
-        i, i_interpretation
-    ));
 
     *counter += 1;
     Some(Finding {
@@ -122,15 +58,15 @@ pub fn analyze(
         severity,
         confidence,
         path: file.relative_path.clone(),
-        summary,
-        reasons,
+        summary: String::new(),
+        reasons: vec![],
         evidence: vec![
             format!("fan_in: {}", fan_in),
             format!("fan_out: {}", fan_out),
             format!("instability: {:.3}", i),
             format!("pattern: {}", pattern_label),
         ],
-        suggested_next_step,
+        suggested_next_step: String::new(),
         estimated_tokens: None,
     })
 }
@@ -173,7 +109,7 @@ mod tests {
             &mut 0,
         )
         .unwrap();
-        assert!(f.reasons.iter().any(|r| r.contains("Fan-in")));
+        assert!(f.evidence.iter().any(|e| e.starts_with("fan_in: 15")));
     }
     #[test]
     fn flags_high_fan_out() {
@@ -184,7 +120,7 @@ mod tests {
             &mut 0,
         )
         .unwrap();
-        assert!(f.reasons.iter().any(|r| r.contains("Fan-out")));
+        assert!(f.evidence.iter().any(|e| e.starts_with("fan_out: 20")));
     }
     #[test]
     fn fan_in_only_is_always_medium() {
@@ -230,7 +166,7 @@ mod tests {
         .unwrap();
         assert_eq!(f.severity, Severity::High);
         assert_eq!(f.confidence, 0.85);
-        assert!(f.summary.contains("I="));
+        assert!(f.evidence.iter().any(|e| e.starts_with("instability:")));
         assert!(f.evidence.iter().any(|e| e.starts_with("pattern: god")));
     }
 
@@ -263,6 +199,5 @@ mod tests {
         assert_eq!(f.confidence, 0.65);
         assert!(f.evidence.iter().any(|e| e.starts_with("pattern: api")));
         assert!(f.evidence.iter().any(|e| e.starts_with("instability:")));
-        assert!(f.reasons.iter().any(|r| r.contains("Instability")));
     }
 }

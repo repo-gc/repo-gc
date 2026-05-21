@@ -14,15 +14,12 @@ function compactSummary(f: Finding): string {
       const lc = evVal(f.evidence, 'line_count');
       const tk = evVal(f.evidence, 'estimated_tokens');
       let s = `${lc}ln/${tk}tk`;
-      for (const r of f.reasons) {
-        if (r.includes('functions defined')) {
-          const n = r.split(/\s+/)[0];
-          s += ` +${n}fn`;
-        } else if (r.includes('impl blocks')) {
-          const n = r.split(/\s+/)[0];
-          s += ` +${n}impl`;
-        }
-      }
+      const fn = evVal(f.evidence, 'function_count');
+      if (fn !== '-') s += ` +${fn}fn`;
+      const impl = evVal(f.evidence, 'impl_block_count');
+      if (impl !== '-') s += ` +${impl}impl`;
+      const cls = evVal(f.evidence, 'class_count');
+      if (cls !== '-') s += ` +${cls}cls`;
       return s;
     }
     case FindingKind.CouplingHotspot: {
@@ -38,24 +35,21 @@ function compactSummary(f: Finding): string {
       return `${lc}ln mod=${mp}`;
     }
     case FindingKind.ReexportEntropy: {
-      const pu = evVal(f.evidence, 'pub_use_count');
-      const ti = evVal(f.evidence, 'total_reexported_items');
+      const rc = evVal(f.evidence, 'reexport_count');
+      const ti = evVal(f.evidence, 'total_items');
       const wc = evVal(f.evidence, 'has_wildcard');
       const w = wc === 'true' ? ' +*' : '';
-      return `${ti}sym/${pu}pu${w}`;
+      return `${ti}sym/${rc}rx${w}`;
     }
     case FindingKind.CodeDuplication: {
-      const files = f.evidence.length;
-      const fnName = f.evidence[0]?.split(' :: ')[1] || '?';
-      return `fn:${fnName} x${files}`;
+      const fc = evVal(f.evidence, 'file_count');
+      const fn = evVal(f.evidence, 'fn_name');
+      return `fn:${fn} x${fc}`;
     }
     case FindingKind.UnusedImport: {
-      const n = f.evidence.length;
-      const names = f.evidence
-        .filter(e => e.startsWith('imported but unreferenced: '))
-        .map(e => e.slice('imported but unreferenced: '.length))
-        .slice(0, 4);
-      return `${n}: ${names.join(',')}`;
+      const n = evVal(f.evidence, 'unused_count');
+      const names = evVal(f.evidence, 'preview');
+      return `${n}: ${names}`;
     }
     default:
       return '-';
@@ -65,8 +59,8 @@ function compactSummary(f: Finding): string {
 function compactNext(f: Finding): string {
   switch (f.kind) {
     case FindingKind.ContextBomb: {
-      const lc = evVal(f.evidence, 'line_count');
-      return `split <${lc}ln`;
+      const limit = evVal(f.evidence, 'limit');
+      return `split <${limit}ln`;
     }
     case FindingKind.CouplingHotspot: {
       const pat = evVal(f.evidence, 'pattern');

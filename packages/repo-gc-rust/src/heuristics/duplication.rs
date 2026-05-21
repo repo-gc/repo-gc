@@ -42,10 +42,10 @@ pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> 
         };
 
         *counter += 1;
-        let evidence: Vec<String> = locations
+        let files_list: Vec<String> = locations
             .iter()
-            .take(4)
-            .map(|(path, name)| format!("{path} :: {name}"))
+            .take(5)
+            .map(|(path, _)| path.clone())
             .collect();
 
         let primary_path = std::path::PathBuf::from(&locations[0].0);
@@ -55,16 +55,14 @@ pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> 
             severity,
             confidence: 0.85,
             path: primary_path,
-            summary: format!(
-                "Duplicate logic — fn `{}` copied across {file_count} files, AI edits will not propagate",
-                locations[0].1
-            ),
-            reasons: vec![format!(
-                "Identical function body found in {file_count} different files — AI edits will not propagate"
-            )],
-            evidence,
-            suggested_next_step: "DRY it up: extract duplicated logic into a shared utility function or trait"
-                .into(),
+            summary: String::new(),
+            reasons: vec![],
+            evidence: vec![
+                format!("file_count: {}", file_count),
+                format!("fn_name: {}", locations[0].1),
+                format!("files: {}", files_list.join(", ")),
+            ],
+            suggested_next_step: String::new(),
             estimated_tokens: None,
         });
     }

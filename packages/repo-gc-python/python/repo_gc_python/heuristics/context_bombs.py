@@ -29,11 +29,16 @@ def analyze(
         severity = Severity.Medium
 
     estimated_tokens_ = estimate_tokens(pfile.size_bytes)
-    reasons = [f"{pfile.line_count} lines (limit: {limit})"]
+
+    evidence = [
+        f"line_count: {pfile.line_count}",
+        f"estimated_tokens: {estimated_tokens_}",
+        f"limit: {limit}",
+    ]
     if info.function_count > 10:
-        reasons.append(f"{info.function_count} functions defined")
+        evidence.append(f"function_count: {info.function_count}")
     if info.class_count > 3:
-        reasons.append(f"{info.class_count} classes defined")
+        evidence.append(f"class_count: {info.class_count}")
 
     return Finding(
         id=f"cb-{counter:03d}",
@@ -41,18 +46,9 @@ def analyze(
         severity=severity,
         confidence=0.95 if pfile.line_count >= limit * 2 else 0.75,
         path=str(pfile.relative_path),
-        summary=(
-            f"Oversized file — {pfile.line_count} lines / "
-            f"~{estimated_tokens_} tokens, each AI edit re-reads this entire file"
-        ),
-        reasons=reasons,
-        evidence=[
-            f"line_count: {pfile.line_count}",
-            f"estimated_tokens: {estimated_tokens_}",
-        ],
-        suggested_next_step=(
-            f"Split {pfile.relative_path} into smaller modules "
-            f"(target <{limit} lines each)"
-        ),
+        summary="",
+        reasons=[],
+        evidence=evidence,
+        suggested_next_step="",
         estimated_tokens=estimated_tokens_,
     )

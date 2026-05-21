@@ -81,24 +81,14 @@ pub fn analyze_orphaned_files(
                 severity,
                 confidence: 0.6,
                 path: file.relative_path.clone(),
-                summary: format!(
-                    "Dead module — {} (~{} lines) loaded into agent context but never referenced",
-                    file.relative_path.display(),
-                    file.line_count
-                ),
-                reasons: vec![format!(
-                    "Module '{}' is not imported by any other module — wasted context capacity",
-                    module_path
-                )],
+                summary: String::new(),
+                reasons: vec![],
                 evidence: vec![
                     format!("module_path: {}", module_path),
                     format!("line_count: {}", file.line_count),
+                    format!("stem: {}", stem),
                 ],
-                suggested_next_step: format!(
-                    "Remove {} or add a `mod {}` declaration if it is still needed",
-                    file.relative_path.display(),
-                    stem
-                ),
+                suggested_next_step: String::new(),
                 estimated_tokens: Some(crate::heuristics::context_bombs::estimate_tokens(
                     file.size_bytes,
                 )),

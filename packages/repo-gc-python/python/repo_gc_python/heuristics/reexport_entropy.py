@@ -39,36 +39,19 @@ def analyze(
     elif total_items >= limit:
         severity = Severity.Medium
 
-    reasons = [
-        f"{reexport_count} re-export declarations"
-        if info.is_init_file
-        else f"__all__ with {total_items} symbols",
-        f"{total_items} total re-exported symbols",
-    ]
-    if has_wildcard:
-        reasons.append("Contains wildcard re-exports (from x import *)")
-    if has_all:
-        reasons.append(f"Declares __all__ ({len(info.all_export or [])} symbols)")
-
     return Finding(
         id=f"re-{counter:03d}",
         kind=FindingKind.ReexportEntropy,
         severity=severity,
         confidence=0.8,
         path=str(pfile.relative_path),
-        summary=(
-            f"Re-export chain — {total_items} symbols via imports, "
-            f"agents traverse multiple files to resolve each import"
-        ),
-        reasons=reasons,
+        summary="",
+        reasons=[],
         evidence=[
-            f"pub_use_count: {reexport_count}",
-            f"total_reexported_items: {total_items}",
+            f"reexport_count: {reexport_count}",
+            f"total_items: {total_items}",
             f"has_wildcard: {str(has_wildcard).lower()}",
         ],
-        suggested_next_step=(
-            f"Flatten the re-export chain in {pfile.relative_path} — "
-            f"barrel files degrade LLM path resolution"
-        ),
+        suggested_next_step="",
         estimated_tokens=None,
     )

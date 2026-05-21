@@ -24,12 +24,12 @@ export function analyze(
   }
 
   const tokens = estimateTokens(file.sizeBytes);
-  const reasons: string[] = [];
-  if (ratio >= 4) reasons.push(`File is ${ratio.toFixed(0)}x over the ${threshold.lineCountLimit}-line limit`);
-  if (tokens > 4000) reasons.push(`Estimated ${tokens} tokens — eats ${((tokens / 128000) * 100).toFixed(1)}% of a Claude session window`);
 
-  const evidence = [`${file.lineCount}ln / ${tokens}tk`];
-  if (file.sizeBytes > 50000) evidence.push(`${(file.sizeBytes / 1024).toFixed(1)}KB source file`);
+  const evidence = [
+    `line_count: ${file.lineCount}`,
+    `estimated_tokens: ${tokens}`,
+    `limit: ${threshold.lineCountLimit}`,
+  ];
 
   return {
     id: `cb-${String(idCounter.value++).padStart(3, '0')}`,
@@ -37,10 +37,10 @@ export function analyze(
     severity,
     confidence,
     path: file.relativePath,
-    summary: `${file.lineCount}-line file (${tokens} estimated tokens)`,
-    reasons,
+    summary: '',
+    reasons: [],
     evidence,
-    suggested_next_step: `Split into smaller modules targeting <${threshold.lineCountLimit} lines each`,
+    suggested_next_step: '',
     estimated_tokens: tokens,
   };
 }

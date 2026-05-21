@@ -31,20 +31,14 @@ def analyze(
         id=f"ui-{counter:03d}",
         kind=FindingKind.UnusedImport,
         severity=severity,
-        confidence=0.65,  # Low confidence: dynamic patterns may reference names invisibly
+        confidence=0.65,
         path=str(pfile.relative_path),
-        summary=(
-            f"Zombie imports — {len(unused)} unused names inflate token usage "
-            f"in every context window: {', '.join(preview)}"
-        ),
-        reasons=[
-            f"{len(unused)} imported names not referenced in file body; "
-            f"dynamic patterns may cause false positives"
+        summary="",
+        reasons=[],
+        evidence=[
+            f"unused_count: {len(unused)}",
+            f"preview: {', '.join(preview)}",
         ],
-        evidence=[f"imported but unreferenced: {n}" for n in unused],
-        suggested_next_step=(
-            "Remove zombie imports to reduce token waste, or verify they are "
-            "needed by dynamic usage patterns"
-        ),
+        suggested_next_step="",
         estimated_tokens=None,
     )

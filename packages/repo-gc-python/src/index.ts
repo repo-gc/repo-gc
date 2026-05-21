@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, delimiter } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from 'repo-gc-shared';
-import { FindingKind, Severity } from 'repo-gc-shared';
+import { FindingKind, Severity, pluginDirNotFound, runtimeNotFound, processExited, outputParseFailed, spawnFailed } from 'repo-gc-shared';
 import type { Finding, Thresholds } from 'repo-gc-shared';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -109,7 +109,7 @@ function spawnPython(
           filesAnalyzed: 0,
           totalLines: 0,
           totalEstimatedTokens: 0,
-          errors: [`python exited ${code}: ${stderr.trim() || 'unknown error'}`],
+          errors: [processExited('Python', code, stderr.trim())],
         });
         return;
       }
@@ -128,7 +128,7 @@ function spawnPython(
           filesAnalyzed: 0,
           totalLines: 0,
           totalEstimatedTokens: 0,
-          errors: [`python output parse failed: ${stderr.trim() || stdout.slice(0, 200)}`],
+          errors: [outputParseFailed('Python', stderr.trim() || stdout)],
         });
       }
     });
@@ -142,7 +142,7 @@ function spawnPython(
         filesAnalyzed: 0,
         totalLines: 0,
         totalEstimatedTokens: 0,
-        errors: [`python spawn failed: ${err.message}`],
+        errors: [spawnFailed('Python', err.message)],
       });
     });
   });
@@ -172,7 +172,7 @@ export const pythonPlugin: LanguagePlugin = {
       return {
         findings: [],
         skipped: 0,
-        errors: ['Python plugin directory not found. Install repo-gc-python alongside repo-gc.'],
+        errors: [pluginDirNotFound('Python', 'Install repo-gc-python alongside repo-gc.')],
       };
     }
 
@@ -181,7 +181,7 @@ export const pythonPlugin: LanguagePlugin = {
       return {
         findings: [],
         skipped: 0,
-        errors: ['Python interpreter not found. Install Python >=3.10 and ensure it is on PATH.'],
+        errors: [runtimeNotFound('Python interpreter', 'Install Python >=3.10 and ensure it is on PATH.')],
       };
     }
 

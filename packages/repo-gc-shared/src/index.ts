@@ -17,3 +17,12 @@ export { renderReport } from './render';
 export { renderTerminal, renderJson, renderMarkdown, renderLlm } from './reporters';
 
 export type { SourceFile, AnalysisResult, LanguagePlugin } from './plugin';
+
+// Centralised user-facing messages for plugins
+export {
+  runtimeNotFound,
+  pluginDirNotFound,
+  processExited,
+  outputParseFailed,
+  spawnFailed,
+} from './messages';

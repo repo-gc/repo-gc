@@ -9,6 +9,7 @@ import {
 } from 'repo-gc-shared';
 import { discoverWorkspace, enumerateFiles, detectLanguages } from './discovery';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from './plugin';
+import { enrichFindings } from './enrich';
 
 let _idSeq = 0;
 function nextId(plugin: string): string {
@@ -119,6 +120,9 @@ async function analyze(opts: ScanOptions, plugins: LanguagePlugin[]): Promise<Re
       allFindings.push({ ...f, id: nextId(plugin.name) });
     }
   }
+
+  // 5. Enrich findings with human-readable text from evidence data
+  enrichFindings(allFindings);
 
   // 6. Scoring
   allFindings.sort((a, b) => SEVERITY_WEIGHT[b.severity] - SEVERITY_WEIGHT[a.severity]);

@@ -38,6 +38,9 @@ importers:
 
   packages/repo-gc-python:
     dependencies:
+      repo-gc:
+        specifier: workspace:*
+        version: link:../repo-gc
       repo-gc-shared:
         specifier: workspace:*
         version: link:../repo-gc-shared

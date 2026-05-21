@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, delimiter } from 'node:path';
 import { existsSync, chmodSync } from 'node:fs';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from 'repo-gc-shared';
-import { FindingKind, Severity } from 'repo-gc-shared';
+import { FindingKind, Severity, runtimeNotFound, processExited, outputParseFailed, spawnFailed } from 'repo-gc-shared';
 import type { Finding, Thresholds } from 'repo-gc-shared';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -78,7 +78,7 @@ function spawnBinary(binaryPath: string, args: string[]): Promise<RustBinaryOutp
 
     child.on('close', (code) => {
       if (code !== 0) {
-        resolve({ findings: [], errors: [`Rust binary exited with code ${code}: ${stderr.trim()}`] });
+        resolve({ findings: [], errors: [processExited('Rust binary', code, stderr.trim())] });
         return;
       }
       try {
@@ -92,12 +92,12 @@ function spawnBinary(binaryPath: string, args: string[]): Promise<RustBinaryOutp
           totalEstimatedTokens: parsed.total_estimated_tokens,
         });
       } catch {
-        resolve({ findings: [], errors: [`Failed to parse Rust binary output: ${stdout.slice(0, 200)}`] });
+        resolve({ findings: [], errors: [outputParseFailed('Rust binary', stdout)] });
       }
     });
 
     child.on('error', (err) => {
-      resolve({ findings: [], errors: [`Failed to spawn Rust binary: ${err.message}`] });
+      resolve({ findings: [], errors: [spawnFailed('Rust binary', err.message)] });
     });
   });
 }
@@ -123,7 +123,7 @@ export const rustPlugin: LanguagePlugin = {
   ): Promise<AnalysisResult> {
     const binary = findBinary();
     if (!binary) {
-      return { findings: [], skipped: 0, errors: ['Rust binary not found. Install repo-gc-rust alongside repo-gc, or build from source with `cargo build --release`.'] };
+      return { findings: [], skipped: 0, errors: [runtimeNotFound('Rust binary', 'Install repo-gc-rust alongside repo-gc, or build from source with `cargo build --release`.')] };
     }
 
     const args = [

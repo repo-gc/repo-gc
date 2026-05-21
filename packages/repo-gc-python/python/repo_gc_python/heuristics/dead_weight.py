@@ -66,20 +66,14 @@ def analyze_orphaned_files(
                     severity=severity,
                     confidence=0.6,
                     path=str(pfile.relative_path),
-                    summary=(
-                        f"Dead module — {pfile.relative_path} (~{pfile.line_count} lines) "
-                        f"loaded into agent context but never referenced"
-                    ),
-                    reasons=[
-                        f"Module '{module_path}' is not imported by any other module — wasted context capacity"
-                    ],
+                    summary="",
+                    reasons=[],
                     evidence=[
                         f"module_path: {module_path}",
                         f"line_count: {pfile.line_count}",
+                        f"stem: {stem}",
                     ],
-                    suggested_next_step=(
-                        f"Remove {pfile.relative_path} or import it if it is still needed"
-                    ),
+                    suggested_next_step="",
                     estimated_tokens=estimate_tokens(pfile.size_bytes),
                 )
             )

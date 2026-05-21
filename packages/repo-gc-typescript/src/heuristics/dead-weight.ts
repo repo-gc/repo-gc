@@ -48,20 +48,22 @@ export function analyze(
     else if (lineCount >= 500) severity = Severity.High;
     else severity = Severity.Medium;
 
+    const stem = info.relativePath.split('/').pop()?.replace(/\.[^.]+$/, '') || info.relativePath;
+
     findings.push({
       id: `dw-${String(idCounter.value++).padStart(3, '0')}`,
       kind: FindingKind.DeadWeight,
       severity,
       confidence: 0.6,
       path: info.relativePath,
-      summary: `${lineCount}-line file is never imported`,
-      reasons: [
-        'No other file in the project imports this module',
-        'It is not an entry point (package.json main/bin/exports) or config file',
+      summary: '',
+      reasons: [],
+      evidence: [
+        `module_path: ${info.modulePath}`,
+        `line_count: ${lineCount}`,
+        `stem: ${stem}`,
       ],
-      evidence: [`${lineCount} lines, fan-in=0`],
-      suggested_next_step:
-        'Remove the file if unused, or ensure it is reachable from an entry point',
+      suggested_next_step: '',
     });
   }
 

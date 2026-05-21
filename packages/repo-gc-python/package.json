@@ -1,10 +1,11 @@
 {
   "name": "repo-gc-python",
   "version": "0.2.5",
-  "private": true,
   "description": "AI-era Python repository hygiene analyzer",
   "license": "MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
+  "author": "repo-gc authors",
+  "keywords": ["repo-gc", "python", "repository", "hygiene", "ai", "llm", "context", "code-quality", "analyzer", "cli"],
   "type": "module",
   "bin": {
     "repo-gc-python": "./dist/cli.js"
@@ -13,13 +14,15 @@
   "exports": {
     ".": "./dist/index.js"
   },
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "python"
   ],
   "scripts": {
     "build": "tsup src/index.ts src/cli.ts --format esm --dts --clean",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "repo-gc": "workspace:*",

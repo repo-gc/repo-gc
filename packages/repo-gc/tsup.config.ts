@@ -10,5 +10,5 @@ export default defineConfig({
   banner: {
     js: '#!/usr/bin/env node',
   },
-  external: ['repo-gc-typescript', 'repo-gc-shared', 'repo-gc-python'],
+  external: ['repo-gc-typescript', 'repo-gc-python'],
 });

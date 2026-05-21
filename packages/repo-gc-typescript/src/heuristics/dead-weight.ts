@@ -1,4 +1,4 @@
-import { Finding, FindingKind, Severity, type Thresholds } from 'repo-gc-shared';
+import { Finding, FindingKind, Severity, type Thresholds } from 'repo-gc';
 import { SourceFile, FileInfo, ImportGraph } from '../types';
 
 const CONFIG_PATTERNS = [

@@ -1,1 +1,1 @@
-export type { SourceFile, AnalysisResult, LanguagePlugin } from 'repo-gc-shared';
+export type { SourceFile, AnalysisResult, LanguagePlugin } from './shared/plugin';

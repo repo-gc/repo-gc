@@ -1,4 +1,4 @@
-import { Finding, FindingKind, Severity, type Thresholds } from 'repo-gc-shared';
+import { Finding, FindingKind, Severity, type Thresholds } from 'repo-gc';
 import { FileInfo } from '../types';
 
 export function analyze(

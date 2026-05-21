@@ -1,4 +1,4 @@
-import { Finding, FindingKind } from 'repo-gc-shared';
+import { Finding, FindingKind } from './shared/types';
 
 function parseEvidence(evidence: string[]): Record<string, string> {
   const data: Record<string, string> = {};

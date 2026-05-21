@@ -10,5 +10,5 @@ export default defineConfig({
   banner: {
     js: '#!/usr/bin/env node',
   },
-  external: ['oxc-parser', 'unrs-resolver', 'repo-gc-shared'],
+  external: ['oxc-parser', 'unrs-resolver', 'repo-gc'],
 });

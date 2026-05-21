@@ -6,7 +6,7 @@ import {
   computeGlobalScore,
   estimateTokens,
   renderReport,
-} from 'repo-gc-shared';
+} from './shared/index';
 import { discoverWorkspace, enumerateFiles, detectLanguages } from './discovery';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from './plugin';
 import { enrichFindings } from './enrich';

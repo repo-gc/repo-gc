@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scan } from '../src/runner';
-import { getThresholds } from 'repo-gc-shared';
+import { getThresholds } from '../src/shared/threshold';
 import { typescriptPlugin } from 'repo-gc-typescript';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

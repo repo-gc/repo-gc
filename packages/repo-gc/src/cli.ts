@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { Command } from 'commander';
-import { getThresholds, type ThresholdLevel } from 'repo-gc-shared';
+import { getThresholds, type ThresholdLevel } from './shared/threshold';
 import { scan } from './runner';
 import type { LanguagePlugin } from './plugin';
 

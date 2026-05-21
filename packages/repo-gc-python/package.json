@@ -1,6 +1,6 @@
 {
   "name": "repo-gc-python",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "AI-era Python repository hygiene analyzer",
   "license": "MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
@@ -25,8 +25,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "repo-gc": "workspace:*",
-    "repo-gc-shared": "workspace:*"
+    "repo-gc": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

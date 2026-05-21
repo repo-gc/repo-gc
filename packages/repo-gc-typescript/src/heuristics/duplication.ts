@@ -1,4 +1,4 @@
-import { Finding, FindingKind, Severity } from 'repo-gc-shared';
+import { Finding, FindingKind, Severity } from 'repo-gc';
 import { FileInfo } from '../types';
 
 export function analyze(infos: FileInfo[], idCounter: { value: number }): Finding[] {

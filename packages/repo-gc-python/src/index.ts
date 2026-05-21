@@ -2,9 +2,9 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, delimiter } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { LanguagePlugin, AnalysisResult, SourceFile } from 'repo-gc-shared';
-import { FindingKind, Severity, pluginDirNotFound, runtimeNotFound, processExited, outputParseFailed, spawnFailed } from 'repo-gc-shared';
-import type { Finding, Thresholds } from 'repo-gc-shared';
+import type { LanguagePlugin, AnalysisResult, SourceFile } from 'repo-gc';
+import { FindingKind, Severity, pluginDirNotFound, runtimeNotFound, processExited, outputParseFailed, spawnFailed } from 'repo-gc';
+import type { Finding, Thresholds } from 'repo-gc';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

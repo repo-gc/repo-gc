@@ -1,5 +1,5 @@
-import type { Finding, LanguagePlugin, AnalysisResult, SourceFile, Thresholds } from 'repo-gc-shared';
-import { FindingKind, Severity } from 'repo-gc-shared';
+import type { Finding, LanguagePlugin, AnalysisResult, SourceFile, Thresholds } from 'repo-gc';
+import { FindingKind, Severity } from 'repo-gc';
 import { parseAllFiles } from './parser';
 import { ImportGraph } from './graph';
 import {

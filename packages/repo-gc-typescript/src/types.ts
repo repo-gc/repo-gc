@@ -1,5 +1,5 @@
 // Internal intermediate types — AST-language-specific, not part of the output schema contract.
-// Schema types (Severity, FindingKind, Finding, GlobalScore, Report) live in repo-gc-shared.
+// Schema types (Severity, FindingKind, Finding, GlobalScore, Report) live in repo-gc.
 
 export interface SourceFile {
   path: string;

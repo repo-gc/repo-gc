@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "repo-gc": "workspace:*",
+    "repo-gc-shared": "workspace:*",
     "oxc-parser": "^0.132.0",
     "unrs-resolver": "^1.12.2"
   },

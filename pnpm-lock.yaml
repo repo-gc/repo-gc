@@ -22,6 +22,9 @@ importers:
       repo-gc-python:
         specifier: workspace:*
         version: link:../repo-gc-python
+      repo-gc-shared:
+        specifier: workspace:*
+        version: link:../repo-gc-shared
       repo-gc-typescript:
         specifier: workspace:*
         version: link:../repo-gc-typescript
@@ -85,6 +88,9 @@ importers:
       repo-gc:
         specifier: workspace:*
         version: link:../repo-gc
+      repo-gc-shared:
+        specifier: workspace:*
+        version: link:../repo-gc-shared
       unrs-resolver:
         specifier: ^1.12.2
         version: 1.12.2

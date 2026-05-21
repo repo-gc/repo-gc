@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "repo-gc-python": "workspace:*",
+    "repo-gc-shared": "workspace:*",
     "repo-gc-typescript": "workspace:*",
     "commander": "^14.0.3",
     "globby": "^15.0.0",

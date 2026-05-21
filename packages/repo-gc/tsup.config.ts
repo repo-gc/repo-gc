@@ -6,7 +6,7 @@ export default defineConfig({
   target: 'node18',
   clean: true,
   sourcemap: true,
-  dts: { resolve: true },
+  dts: { entry: { index: 'src/index.ts' } },
   banner: {
     js: '#!/usr/bin/env node',
   },

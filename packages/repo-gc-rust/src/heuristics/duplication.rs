@@ -32,7 +32,7 @@ pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> 
     }
 
     let mut findings = vec![];
-    for (_body, locations) in &body_map {
+    for locations in body_map.values() {
         let unique_files: std::collections::HashSet<&str> =
             locations.iter().map(|(p, _)| p.as_str()).collect();
         if unique_files.len() < 2 {

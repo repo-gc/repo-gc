@@ -87,9 +87,9 @@ fn compact_summary(f: &Finding) -> String {
             format!("{lc}ln mod={mp}")
         }
         FindingKind::ReexportEntropy => {
-            // evidence: ["pub_use_count: N", "total_reexported_items: N", "has_wildcard: B"]
-            let pu = ev_val(&f.evidence, "pub_use_count");
-            let ti = ev_val(&f.evidence, "total_reexported_items");
+            // evidence: ["reexport_count: N", "total_items: N", "has_wildcard: B"]
+            let pu = ev_val(&f.evidence, "reexport_count");
+            let ti = ev_val(&f.evidence, "total_items");
             let wc = ev_str(&f.evidence, "has_wildcard");
             let w = if wc == "true" { " +*" } else { "" };
             format!("{ti}sym/{pu}pu{w}")
@@ -105,15 +105,10 @@ fn compact_summary(f: &Finding) -> String {
             format!("fn:{fn_name} x{files}")
         }
         FindingKind::UnusedImport => {
-            // evidence: ["imported but unreferenced: name", ...]
-            let n = f.evidence.len();
-            let names: Vec<&str> = f
-                .evidence
-                .iter()
-                .filter_map(|e| e.strip_prefix("imported but unreferenced: "))
-                .take(4)
-                .collect();
-            format!("{n}: {}", names.join(","))
+            // evidence: ["unused_count: N", "preview: name1, name2, ..."]
+            let n = ev_val(&f.evidence, "unused_count");
+            let names = ev_str(&f.evidence, "preview");
+            format!("{n}: {names}")
         }
     }
 }

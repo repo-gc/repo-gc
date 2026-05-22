@@ -14,7 +14,7 @@ pub fn analyze(
     let total_items: usize = structure.pub_use_paths.iter().map(|u| u.item_count).sum();
     let has_wildcard = structure.pub_use_paths.iter().any(|u| u.is_wildcard);
 
-    if pub_use_count < 3 && total_items < limit {
+    if pub_use_count < 3 && total_items < limit && !has_wildcard {
         return None;
     }
 
@@ -107,5 +107,17 @@ mod tests {
         )
         .unwrap();
         assert_eq!(f.severity, Severity::High);
+    }
+
+    #[test]
+    fn single_wildcard_detected() {
+        let f = analyze(
+            &mkfile(),
+            &mks(vec![("a", 1, true)]),
+            &Threshold::Normal,
+            &mut 0,
+        );
+        assert!(f.is_some(), "single wildcard pub use should be detected");
+        assert_eq!(f.unwrap().severity, Severity::High);
     }
 }

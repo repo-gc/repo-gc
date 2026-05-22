@@ -49,7 +49,7 @@ fn walk_source_root(
         .filter_map(|e| e.ok())
         .filter(|e| {
             let p = e.path();
-            if p.extension().map_or(true, |ext| ext != "rs") {
+            if p.extension().is_none_or(|ext| ext != "rs") {
                 return false;
             }
             if p.components().any(|c| c.as_os_str() == "target") {

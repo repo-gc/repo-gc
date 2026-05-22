@@ -1,7 +1,7 @@
 {
   "name": "repo-gc-python",
   "version": "0.2.7",
-  "description": "AI-era Python repository hygiene analyzer",
+  "description": "Python language support for repo-gc — detects oversized files, dead modules, coupling hotspots, re-export chains, duplicate code, and unused imports",
   "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
   "author": "repo-gc authors",

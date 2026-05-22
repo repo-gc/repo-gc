@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.7 (2026-05-22)
+
+### Shared Heuristics Layer
+- **runHeuristics()**: Shared language-agnostic function that runs all 6 heuristics, deduplicating plugin boilerplate across TypeScript, Rust, and Python
+- **Type 2 clone detection**: Added Type 2 (identifier-normalized) code duplication detection alongside existing Type 1 (exact-match) detection
+
+### Architecture
+- Inlined `repo-gc-shared` into `repo-gc` — simplified the plugin dependency graph, eliminating an unnecessary package
+- Python plugin made public (repo-gc-python now published to npm)
+
+### Fixes
+- Fixed wildcard re-export false-negative where `*` re-exports in `__init__.py` were not being detected
+- Updated evidence keys for consistency across all heuristics
+- Build config fixes
+
 ## 0.2.5 (2026-05-20)
 
 ### Python Plugin

@@ -4,7 +4,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/repo-gc-rust)](https://crates.io/crates/repo-gc-rust)
 [![npm](https://img.shields.io/npm/v/repo-gc-rust)](https://www.npmjs.com/package/repo-gc-rust)
-[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](../../LICENSE)
+[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](https://github.com/repo-gc/repo-gc/blob/main/LICENSE)
 
 A standalone native binary that parses Rust code with [syn](https://docs.rs/syn), builds an import graph, and runs 6 heuristics. Fast — uses [rayon](https://docs.rs/rayon) for parallel parsing. Can run standalone or as a plugin to the main `repo-gc` runner.
 
@@ -118,4 +118,4 @@ Analysis runs in parallel via `rayon`. Output formats: text (terminal with ASCII
 
 ## License
 
-FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](../../LICENSE).
+FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](https://github.com/repo-gc/repo-gc/blob/main/LICENSE).

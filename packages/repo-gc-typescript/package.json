@@ -1,6 +1,6 @@
 {
   "name": "repo-gc-typescript",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "TypeScript/JavaScript language support for repo-gc — detects oversized files, dead modules, coupling hotspots, barrel re-exports, duplicate code, and unused imports",
   "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",

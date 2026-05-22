@@ -3,7 +3,7 @@
 **TypeScript/JavaScript language plugin for repo-gc — detects oversized files, dead modules, coupling hotspots, barrel re-exports, duplicate code, and unused imports.**
 
 [![npm](https://img.shields.io/npm/v/repo-gc-typescript)](https://www.npmjs.com/package/repo-gc-typescript)
-[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](../../LICENSE)
+[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](https://github.com/repo-gc/repo-gc/blob/main/LICENSE)
 
 Uses [oxc](https://oxc.rs) for fast AST parsing and builds a module import graph to run 6 heuristics. Install alongside the main `repo-gc` runner.
 
@@ -70,4 +70,4 @@ Parses TypeScript/JavaScript with [oxc-parser](https://www.npmjs.com/package/oxc
 
 ## License
 
-FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](../../LICENSE).
+FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](https://github.com/repo-gc/repo-gc/blob/main/LICENSE).

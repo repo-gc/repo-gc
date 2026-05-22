@@ -385,7 +385,7 @@ dependencies = [
 
 [[package]]
 name = "repo-gc-rust"
-version = "0.2.5"
+version = "0.2.7"
 dependencies = [
  "anyhow",
  "cargo_metadata",

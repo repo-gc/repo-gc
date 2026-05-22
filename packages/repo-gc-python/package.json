@@ -1,8 +1,8 @@
 {
   "name": "repo-gc-python",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "AI-era Python repository hygiene analyzer",
-  "license": "MIT",
+  "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",
   "author": "repo-gc authors",
   "keywords": ["repo-gc", "python", "repository", "hygiene", "ai", "llm", "context", "code-quality", "analyzer", "cli"],

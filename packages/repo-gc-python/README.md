@@ -2,11 +2,9 @@
 
 **Python language plugin for repo-gc — detects oversized files, dead modules, coupling hotspots, re-export chains, duplicate code, and unused imports in Python codebases.**
 
-[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](../../LICENSE)
+[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](https://github.com/repo-gc/repo-gc/blob/main/LICENSE)
 
 Uses Python's stdlib `ast` module for parsing — zero Python dependencies. The plugin spawns `python -m repo_gc_python` as a subprocess and normalizes the JSON output.
-
-> **Note:** This package is not yet published to npm. Install from source.
 
 ```bash
 npx repo-gc-python scan
@@ -28,11 +26,11 @@ npx repo-gc-python scan --format json
 ## Install
 
 ```bash
-git clone https://github.com/repo-gc/repo-gc.git
-cd repo-gc
-pnpm install
-pnpm build
+# No install needed — just run:
+npx repo-gc-python scan
 ```
+
+`repo-gc-python` depends on `repo-gc`, so npx pulls in everything automatically.
 
 ## Heuristics
 
@@ -77,4 +75,4 @@ const result = await pythonPlugin.analyzeLanguage([], workspaceRoot, thresholds)
 
 ## License
 
-FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](../../LICENSE).
+FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](https://github.com/repo-gc/repo-gc/blob/main/LICENSE).

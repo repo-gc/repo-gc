@@ -3,7 +3,7 @@
 **Multi-language repository hygiene analyzer — find patterns that waste tokens, confuse AI agents, and slow down every edit.**
 
 [![npm](https://img.shields.io/npm/v/repo-gc)](https://www.npmjs.com/package/repo-gc)
-[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](../../LICENSE)
+[![License](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](https://github.com/repo-gc/repo-gc/blob/main/LICENSE)
 
 `repo-gc` is the main CLI runner. It discovers your workspace, auto-detects languages, dispatches to language plugins, and formats the output. Install it along with the language plugins you need.
 
@@ -95,9 +95,9 @@ interface LanguagePlugin {
 
 | Plugin | Package | Coverage |
 |--------|---------|----------|
-| TypeScript/JavaScript | [`repo-gc-typescript`](../repo-gc-typescript) | `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` |
-| Rust | [`repo-gc-rust`](../repo-gc-rust) | `.rs` (native binary, invoked as subprocess) |
-| Python | `repo-gc-python` | `.py` (spawns `python -m repo_gc_python`) |
+| TypeScript/JavaScript | [`repo-gc-typescript`](https://github.com/repo-gc/repo-gc/tree/main/packages/repo-gc-typescript) | `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` |
+| Rust | [`repo-gc-rust`](https://github.com/repo-gc/repo-gc/tree/main/packages/repo-gc-rust) | `.rs` (native binary, invoked as subprocess) |
+| Python | [`repo-gc-python`](https://github.com/repo-gc/repo-gc/tree/main/packages/repo-gc-python) | `.py` (spawns `python -m repo_gc_python`) |
 
 ## Requirements
 
@@ -106,4 +106,4 @@ interface LanguagePlugin {
 
 ## License
 
-FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](../../LICENSE).
+FSL-1.1-MIT — free for individuals, teams, and CI pipelines. See [LICENSE](https://github.com/repo-gc/repo-gc/blob/main/LICENSE).

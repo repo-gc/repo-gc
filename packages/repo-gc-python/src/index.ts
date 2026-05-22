@@ -39,6 +39,11 @@ const PYTHON_KIND_MAP: Record<string, FindingKind> = {
   CouplingHotspot: FindingKind.CouplingHotspot,
   CodeDuplication: FindingKind.CodeDuplication,
   UnusedImport: FindingKind.UnusedImport,
+  ErrorSwallow: FindingKind.ErrorSwallow,
+  BranchDensity: FindingKind.BranchDensity,
+  DeepNesting: FindingKind.DeepNesting,
+  ImportDiversity: FindingKind.ImportDiversity,
+  NamingEntropy: FindingKind.NamingEntropy,
 };
 
 const PYTHON_SEVERITY_MAP: Record<string, Severity> = {

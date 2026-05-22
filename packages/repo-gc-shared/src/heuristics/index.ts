@@ -1,3 +1,5 @@
+export { analyzeBranchDensity } from './branch-density';
+export { analyzeImportDiversity } from './import-diversity';
 export { analyzeContextBombs } from './context-bombs';
 export { analyzeDeadWeight } from './dead-weight';
 export type { DeadWeightOptions } from './dead-weight';
@@ -7,3 +9,11 @@ export { analyzeDuplication } from './duplication';
 export type { DuplicationOptions } from './duplication';
 export { analyzeUnusedImports } from './unused-imports';
 export type { UnusedImportsOptions } from './unused-imports';
+export { analyzeErrorSwallow } from './error-swallow';
+export { analyzeDeepNesting } from './deep-nesting';
+export { analyzeDangerousPattern } from './dangerous-pattern';
+export { analyzeCommentRatio } from './comment-ratio';
+export { analyzeStringlyTyped } from './stringly-typed';
+export { analyzeNamingEntropy } from './naming-entropy';
+export { analyzeTypeComplexity } from './type-complexity';
+export { analyzeImplicitControl } from './implicit-control';

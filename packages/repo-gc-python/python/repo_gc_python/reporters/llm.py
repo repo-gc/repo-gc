@@ -61,6 +61,33 @@ def _compact_summary(f: Finding) -> str:
                 names.append(e[len("imported but unreferenced: ") :])
         return f"{n}: {','.join(names[:4])}"
 
+    elif f.kind == FindingKind.BranchDensity:
+        bc = _ev_val(f.evidence, "branch_count")
+        fc = _ev_val(f.evidence, "function_count")
+        avg = _ev_val(f.evidence, "avg_branches_per_fn")
+        return f"{avg}br/fn ({bc}br, {fc}fn)"
+
+    elif f.kind == FindingKind.DeepNesting:
+        depth = _ev_val(f.evidence, "max_depth")
+        limit = _ev_val(f.evidence, "limit")
+        return f"{depth}nest (limit:{limit})"
+
+    elif f.kind == FindingKind.ImportDiversity:
+        dc = _ev_val(f.evidence, "domain_count")
+        limit = _ev_val(f.evidence, "limit")
+        domains = _ev_val(f.evidence, "domains")
+        return f"{dc}dom (limit:{limit}): {domains}"
+
+    elif f.kind == FindingKind.DangerousPattern:
+        count = _ev_val(f.evidence, "dangerous_pattern_count")
+        limit = _ev_val(f.evidence, "limit")
+        return f"{count}dang (limit:{limit})"
+
+    elif f.kind == FindingKind.NamingEntropy:
+        dc = _ev_val(f.evidence, "dominant_convention")
+        mc = _ev_val(f.evidence, "mixed_count")
+        return f"{mc}conventions dominant={dc}"
+
     return "-"
 
 
@@ -83,6 +110,16 @@ def _compact_next(f: Finding) -> str:
         return "DRY: shared util"
     elif f.kind == FindingKind.UnusedImport:
         return "rm imports"
+    elif f.kind == FindingKind.BranchDensity:
+        return "decompose fns"
+    elif f.kind == FindingKind.DeepNesting:
+        return "flatten nesting"
+    elif f.kind == FindingKind.ImportDiversity:
+        return "split by domain"
+    elif f.kind == FindingKind.DangerousPattern:
+        return "refactor unsafe patterns"
+    elif f.kind == FindingKind.NamingEntropy:
+        return "unify naming conventions"
     return "-"
 
 

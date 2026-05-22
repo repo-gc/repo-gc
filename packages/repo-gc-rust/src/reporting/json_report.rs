@@ -32,11 +32,14 @@ mod tests {
                 structural_entropy_score: 20,
                 context_waste_ratio: 0.39,
                 estimated_waste_pct: 8,
+            reasoning_complexity_score: 0,
             },
             files_analyzed: 10,
             files_skipped: 2,
             total_lines: 5000,
             total_estimated_tokens: 50000,
+            errors: vec![],
+            version: "0.0.0".to_string(),
         };
         let v: serde_json::Value = serde_json::from_str(&render(&report).unwrap()).unwrap();
         assert_eq!(v["global_score"]["ai_friction_score"], 55);

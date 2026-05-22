@@ -70,6 +70,42 @@ function computeModulePath(relativePath: string, packageName: string): string {
   return `${packageName}::${parts.join('::')}`;
 }
 
+/** Recursively measure the nesting depth of a type expression. */
+function measureTypeDepth(node: Record<string, unknown>): number {
+  switch (node.type) {
+    case 'TSTypeReference': {
+      const typeParams = node.typeParameters as Record<string, unknown> | undefined;
+      if (!typeParams) return 0;
+      const params = typeParams.params as Record<string, unknown>[] | undefined;
+      if (!Array.isArray(params) || params.length === 0) return 0;
+      let maxInner = 0;
+      for (const p of params) maxInner = Math.max(maxInner, measureTypeDepth(p));
+      return 1 + maxInner;
+    }
+    case 'TSUnionType':
+    case 'TSIntersectionType': {
+      const types = node.types as Record<string, unknown>[] | undefined;
+      if (!Array.isArray(types)) return 0;
+      let maxInner = 0;
+      for (const t of types) maxInner = Math.max(maxInner, measureTypeDepth(t));
+      return 1 + maxInner;
+    }
+    case 'TSArrayType': {
+      const elem = node.elementType as Record<string, unknown> | undefined;
+      return elem ? 1 + measureTypeDepth(elem) : 0;
+    }
+    case 'TSTupleType': {
+      const elems = node.elementTypes as Record<string, unknown>[] | undefined;
+      if (!Array.isArray(elems)) return 0;
+      let maxInner = 0;
+      for (const e of elems) maxInner = Math.max(maxInner, measureTypeDepth(e));
+      return 1 + maxInner;
+    }
+    default:
+      return 0;
+  }
+}
+
 export interface ParseResult {
   info: FileInfo;
   skipped: boolean;
@@ -107,6 +143,8 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
   const functionBodiesRaw = new Map<string, string>();
   const jsxIdentifiers = new Set<string>();
   let functionCount = 0;
+  let decoratorCount = 0;
+  let maxTypeDepth = 0;
 
   walk(program, (node) => {
     switch (node.type) {
@@ -207,6 +245,20 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
         }
         break;
       }
+
+      case 'Decorator': {
+        decoratorCount++;
+        break;
+      }
+
+      case 'TSTypeAnnotation': {
+        const ta = node as Record<string, unknown>;
+        const inner = ta.typeAnnotation as Record<string, unknown>;
+        if (inner) {
+          maxTypeDepth = Math.max(maxTypeDepth, measureTypeDepth(inner));
+        }
+        break;
+      }
     }
   });
 
@@ -234,6 +286,16 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
       allIdentifiers,
       importedNames,
       isEntryPoint,
+      maxTypeDepth,
+      decoratorCount,
+      branchCount: 0,
+      maxNestingDepth: 0,
+      commentLineCount: 0,
+      emptyCatchCount: 0,
+      dangerousPatternCount: 0,
+      mutableGlobalCount: 0,
+      stringComparisonCount: 0,
+      platformConditionalCount: 0,
     },
     skipped: false,
   };
@@ -254,6 +316,16 @@ function emptyFileInfo(file: SourceFile, workspaceRoot: string): FileInfo {
     allIdentifiers: new Set(),
     importedNames: [],
     isEntryPoint: false,
+    maxTypeDepth: 0,
+    decoratorCount: 0,
+    branchCount: 0,
+    maxNestingDepth: 0,
+    commentLineCount: 0,
+    emptyCatchCount: 0,
+    dangerousPatternCount: 0,
+    mutableGlobalCount: 0,
+    stringComparisonCount: 0,
+    platformConditionalCount: 0,
   };
 }
 

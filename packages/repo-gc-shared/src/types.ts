@@ -29,6 +29,16 @@ export enum FindingKind {
   CouplingHotspot = 'coupling-hotspot',
   CodeDuplication = 'code-duplication',
   UnusedImport = 'unused-import',
+  BranchDensity = 'branch-density',
+  DeepNesting = 'deep-nesting',
+  TypeComplexity = 'type-complexity',
+  CommentRatio = 'comment-ratio',
+  ImplicitControl = 'implicit-control',
+  ErrorSwallow = 'error-swallow',
+  DangerousPattern = 'dangerous-pattern',
+  NamingEntropy = 'naming-entropy',
+  StringlyTyped = 'stringly-typed',
+  ImportDiversity = 'import-diversity',
 }
 
 export const FINDING_KIND_LLM: Record<FindingKind, string> = {
@@ -38,6 +48,16 @@ export const FINDING_KIND_LLM: Record<FindingKind, string> = {
   [FindingKind.CouplingHotspot]: 'COUP',
   [FindingKind.CodeDuplication]: 'DUP',
   [FindingKind.UnusedImport]: 'ZOMB',
+  [FindingKind.BranchDensity]: 'BRAN',
+  [FindingKind.DeepNesting]: 'NEST',
+  [FindingKind.TypeComplexity]: 'TYPE',
+  [FindingKind.CommentRatio]: 'CMNT',
+  [FindingKind.ImplicitControl]: 'HIDE',
+  [FindingKind.ErrorSwallow]: 'SWAL',
+  [FindingKind.DangerousPattern]: 'DANG',
+  [FindingKind.NamingEntropy]: 'MIXD',
+  [FindingKind.StringlyTyped]: 'STRY',
+  [FindingKind.ImportDiversity]: 'GODF',
 };
 
 export interface Finding {
@@ -57,6 +77,7 @@ export interface GlobalScore {
   ai_friction_score: number;
   context_waste_score: number;
   structural_entropy_score: number;
+  reasoning_complexity_score: number;
   context_waste_ratio: number;
   estimated_waste_pct: number;
 }
@@ -71,6 +92,9 @@ export interface Report {
   errors: string[];
   version: string;
 }
+
+// Re-export for heuristics that import from ../types
+export type { Thresholds } from './threshold';
 
 // Language-agnostic data interfaces for centralized heuristics.
 // Plugins produce these from their language-specific parsers.
@@ -108,6 +132,22 @@ export interface FileData {
   exports: Array<{ sourcePath: string; itemCount: number; isWildcard: boolean }>;
   /** Function bodies for duplication detection */
   functionBodies: FunctionBodyData[];
+  /** Branching density metrics */
+  branchCount: number;
+  /** Maximum nesting depth of control flow */
+  maxNestingDepth: number;
+  /** Maximum type expression depth */
+  maxTypeDepth: number;
+  /** Number of comment-only lines */
+  commentLineCount: number;
+  /** Number of decorator/annotation usages */
+  decoratorCount: number;
+  /** Number of empty catch blocks */
+  emptyCatchCount: number;
+  /** Number of dangerous pattern matches */
+  dangerousPatternCount: number;
+  /** Number of string comparison operations */
+  stringComparisonCount: number;
 }
 
 /** Cross-file import graph — computed by plugins from FileData[].imports */

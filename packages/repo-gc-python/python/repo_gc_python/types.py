@@ -39,6 +39,18 @@ class FindingKind(Enum):
     CouplingHotspot = "CouplingHotspot"
     CodeDuplication = "CodeDuplication"
     UnusedImport = "UnusedImport"
+    BranchDensity = "BranchDensity"
+    DeepNesting = "DeepNesting"
+    TypeComplexity = "TypeComplexity"
+    CommentRatio = "CommentRatio"
+    ImplicitControl = "ImplicitControl"
+    ErrorSwallow = "ErrorSwallow"
+    DangerousPattern = "DangerousPattern"
+    MutableGlobal = "MutableGlobal"
+    NamingEntropy = "NamingEntropy"
+    StringlyTyped = "StringlyTyped"
+    ImportDiversity = "ImportDiversity"
+    PlatformDensity = "PlatformDensity"
 
     @property
     def label(self) -> str:
@@ -49,6 +61,18 @@ class FindingKind(Enum):
             FindingKind.CouplingHotspot: "coupling-hotspot",
             FindingKind.CodeDuplication: "code-duplication",
             FindingKind.UnusedImport: "unused-import",
+            FindingKind.BranchDensity: "branch-density",
+            FindingKind.DeepNesting: "deep-nesting",
+            FindingKind.TypeComplexity: "type-complexity",
+            FindingKind.CommentRatio: "comment-ratio",
+            FindingKind.ImplicitControl: "implicit-control",
+            FindingKind.ErrorSwallow: "error-swallow",
+            FindingKind.DangerousPattern: "dangerous-pattern",
+            FindingKind.MutableGlobal: "mutable-global",
+            FindingKind.NamingEntropy: "naming-entropy",
+            FindingKind.StringlyTyped: "stringly-typed",
+            FindingKind.ImportDiversity: "import-diversity",
+            FindingKind.PlatformDensity: "platform-density",
         }
         return _map[self]
 
@@ -61,6 +85,18 @@ class FindingKind(Enum):
             FindingKind.CouplingHotspot: "COUP",
             FindingKind.CodeDuplication: "DUP",
             FindingKind.UnusedImport: "ZOMB",
+            FindingKind.BranchDensity: "BRAN",
+            FindingKind.DeepNesting: "NEST",
+            FindingKind.TypeComplexity: "TYPE",
+            FindingKind.CommentRatio: "CMNT",
+            FindingKind.ImplicitControl: "HIDE",
+            FindingKind.ErrorSwallow: "SWAL",
+            FindingKind.DangerousPattern: "DANG",
+            FindingKind.MutableGlobal: "GLOB",
+            FindingKind.NamingEntropy: "MIXD",
+            FindingKind.StringlyTyped: "STRY",
+            FindingKind.ImportDiversity: "GODF",
+            FindingKind.PlatformDensity: "PLAT",
         }
         return _map[self]
 
@@ -84,6 +120,7 @@ class GlobalScore:
     ai_friction_score: int
     context_waste_score: int
     structural_entropy_score: int
+    reasoning_complexity_score: int
     context_waste_ratio: float
     estimated_waste_pct: int
 
@@ -96,6 +133,8 @@ class Report:
     files_skipped: int = 0
     total_lines: int = 0
     total_estimated_tokens: int = 0
+    errors: list[str] = field(default_factory=list)
+    version: str = ""
 
 
 class ReportEncoder(json.JSONEncoder):

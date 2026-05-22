@@ -33,6 +33,27 @@ export function computeGlobalScore(
       100,
   );
 
+  // New signals: intra-file complexity and control-flow opacity
+  const reasoningComplexity = clamp(
+    (sumWeight(
+      findings.filter(
+        (f) =>
+          f.kind === FindingKind.BranchDensity ||
+          f.kind === FindingKind.DeepNesting ||
+          f.kind === FindingKind.TypeComplexity ||
+          f.kind === FindingKind.CommentRatio ||
+          f.kind === FindingKind.ErrorSwallow ||
+          f.kind === FindingKind.DangerousPattern ||
+          f.kind === FindingKind.NamingEntropy ||
+          f.kind === FindingKind.StringlyTyped ||
+          f.kind === FindingKind.ImportDiversity ||
+          f.kind === FindingKind.ImplicitControl,
+      ),
+    ) /
+      maxExpected) *
+      100,
+  );
+
   const contextWindowTokens = 128_000;
   const contextWasteRatio = totalEstimatedTokens / contextWindowTokens;
   const estimatedWastePct = clamp(
@@ -43,6 +64,7 @@ export function computeGlobalScore(
     ai_friction_score: aiFriction,
     context_waste_score: contextWaste,
     structural_entropy_score: structuralEntropy,
+    reasoning_complexity_score: reasoningComplexity,
     context_waste_ratio: contextWasteRatio,
     estimated_waste_pct: estimatedWastePct,
   };

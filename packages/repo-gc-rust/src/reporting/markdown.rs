@@ -121,11 +121,14 @@ mod tests {
                 structural_entropy_score: 15,
                 context_waste_ratio: 0.16,
                 estimated_waste_pct: 3,
+            reasoning_complexity_score: 0,
             },
             files_analyzed: 5,
             files_skipped: 0,
             total_lines: 2000,
             total_estimated_tokens: 20000,
+            errors: vec![],
+            version: "0.0.0".to_string(),
         }
     }
 

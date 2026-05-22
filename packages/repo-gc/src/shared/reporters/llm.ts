@@ -51,6 +51,27 @@ function compactSummary(f: Finding): string {
       const names = evVal(f.evidence, 'preview');
       return `${n}: ${names}`;
     }
+    case FindingKind.ErrorSwallow: {
+      const count = evVal(f.evidence, 'empty_catch_count');
+      const limit = evVal(f.evidence, 'limit');
+      return `${count}catch (limit:${limit})`;
+    }
+    case FindingKind.DeepNesting: {
+      const depth = evVal(f.evidence, 'max_depth');
+      const limit = evVal(f.evidence, 'limit');
+      return `${depth}nest (limit:${limit})`;
+    }
+    case FindingKind.ImportDiversity: {
+      const dc = evVal(f.evidence, 'domain_count');
+      const limit = evVal(f.evidence, 'limit');
+      const domains = evVal(f.evidence, 'domains');
+      return `${dc}dom (limit:${limit}): ${domains}`;
+    }
+    case FindingKind.DangerousPattern: {
+      const count = evVal(f.evidence, 'dangerous_pattern_count');
+      const limit = evVal(f.evidence, 'limit');
+      return `${count}dang (limit:${limit})`;
+    }
     default:
       return '-';
   }
@@ -72,6 +93,10 @@ function compactNext(f: Finding): string {
     case FindingKind.ReexportEntropy: return 'flatten re-exports';
     case FindingKind.CodeDuplication: return 'DRY: shared util';
     case FindingKind.UnusedImport: return 'rm imports';
+    case FindingKind.ErrorSwallow: return 'log or handle errors';
+    case FindingKind.DeepNesting: return 'flatten nesting';
+    case FindingKind.ImportDiversity: return 'split by domain';
+    case FindingKind.DangerousPattern: return 'refactor unsafe patterns';
     default: return '-';
   }
 }
@@ -85,6 +110,7 @@ export function renderLlm(report: Report): string {
     `fric=${gs.ai_friction_score}`,
     `waste=${gs.context_waste_score}`,
     `ent=${gs.structural_entropy_score}`,
+    `reas=${gs.reasoning_complexity_score}`,
     `ratio=${gs.context_waste_ratio.toFixed(1)}`,
     `pct=${gs.estimated_waste_pct}`,
     `files=${report.files_analyzed}`,

@@ -1,0 +1,5 @@
+[project]
+name = "test-fixture-py"
+version = "0.1.0"
+description = "Test fixture for cross-language validation"
+requires-python = ">=3.11"

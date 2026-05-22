@@ -1,6 +1,16 @@
+pub mod branch_density;
 pub mod context_bombs;
 pub mod coupling;
 pub mod dead_weight;
 pub mod duplication;
+pub mod error_swallow;
+pub mod dangerous_pattern;
+pub mod import_diversity;
 pub mod reexport_entropy;
 pub mod unused_imports;
+pub mod deep_nesting;
+pub mod comment_ratio;
+pub mod stringly_typed;
+pub mod naming_entropy;
+pub mod type_complexity;
+pub mod implicit_control;

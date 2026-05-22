@@ -110,6 +110,57 @@ fn compact_summary(f: &Finding) -> String {
             let names = ev_str(&f.evidence, "preview");
             format!("{n}: {names}")
         }
+        FindingKind::ErrorSwallow => {
+            let n = ev_val(&f.evidence, "empty_catch_count");
+            format!("{n} empty catch")
+        }
+        FindingKind::ImportDiversity => {
+            let dc = ev_val(&f.evidence, "domain_count");
+            let limit = ev_val(&f.evidence, "limit");
+            let domains = ev_str(&f.evidence, "domains");
+            format!("{dc}dom (limit:{limit}): {domains}")
+        }
+        FindingKind::BranchDensity => {
+            let bc = ev_val(&f.evidence, "branch_count");
+            let fc = ev_val(&f.evidence, "function_count");
+            let avg = ev_val(&f.evidence, "avg_branches_per_fn");
+            format!("{avg}br/fn ({bc}br, {fc}fn)")
+        }
+        FindingKind::DeepNesting => {
+            let depth = ev_val(&f.evidence, "max_depth");
+            let limit = ev_val(&f.evidence, "limit");
+            format!("{depth}nest (limit:{limit})")
+        }
+        FindingKind::DangerousPattern => {
+            let count = ev_val(&f.evidence, "dangerous_pattern_count");
+            let limit = ev_val(&f.evidence, "limit");
+            format!("{count}dang (limit:{limit})")
+        }
+        FindingKind::CommentRatio => {
+            let ratio = ev_val(&f.evidence, "ratio");
+            let dir = ev_str(&f.evidence, "direction");
+            format!("{ratio} {dir}")
+        }
+        FindingKind::StringlyTyped => {
+            let count = ev_val(&f.evidence, "string_comparison_count");
+            let limit = ev_val(&f.evidence, "limit");
+            format!("{count}str (limit:{limit})")
+        }
+        FindingKind::NamingEntropy => {
+            let dc = ev_str(&f.evidence, "dominant_convention");
+            let mc = ev_val(&f.evidence, "mixed_count");
+            format!("{mc}conventions dominant={dc}")
+        }
+        FindingKind::TypeComplexity => {
+            let depth = ev_val(&f.evidence, "max_type_depth");
+            let limit = ev_val(&f.evidence, "limit");
+            format!("{depth}nest (limit:{limit})")
+        }
+        FindingKind::ImplicitControl => {
+            let ratio = ev_val(&f.evidence, "ratio");
+            let limit = ev_val(&f.evidence, "limit");
+            format!("{ratio}dec/fn (limit:{limit})")
+        }
     }
 }
 
@@ -131,6 +182,22 @@ fn compact_next(f: &Finding) -> String {
         FindingKind::ReexportEntropy => "flatten re-exports".into(),
         FindingKind::CodeDuplication => "DRY: shared util".into(),
         FindingKind::UnusedImport => "rm imports".into(),
+        FindingKind::ErrorSwallow => "handle errors".into(),
+        FindingKind::BranchDensity => "decompose fns".into(),
+        FindingKind::DeepNesting => "flatten nesting".into(),
+        FindingKind::ImportDiversity => "split by domain".into(),
+        FindingKind::DangerousPattern => "refactor unsafe patterns".into(),
+        FindingKind::CommentRatio => {
+            match ev_str(&f.evidence, "direction").as_str() {
+                "sparse" => "add comments",
+                _ => "trim comments",
+            }
+            .into()
+        }
+        FindingKind::StringlyTyped => "use enums".into(),
+        FindingKind::NamingEntropy => "unify naming conventions".into(),
+        FindingKind::TypeComplexity => "simplify types".into(),
+        FindingKind::ImplicitControl => "minimize decorators".into(),
     }
 }
 
@@ -162,11 +229,14 @@ mod tests {
                 structural_entropy_score: 30,
                 context_waste_ratio: 1.5,
                 estimated_waste_pct: 5,
+            reasoning_complexity_score: 0,
             },
             files_analyzed: 50,
             files_skipped: 0,
             total_lines: 10000,
             total_estimated_tokens: 80000,
+            errors: vec![],
+            version: "0.0.0".to_string(),
         };
         let out = render(&r);
         assert!(out.contains("fric=72"), "missing fric key");
@@ -195,11 +265,14 @@ mod tests {
                 structural_entropy_score: 0,
                 context_waste_ratio: 0.0,
                 estimated_waste_pct: 0,
+            reasoning_complexity_score: 0,
             },
             files_analyzed: 1,
             files_skipped: 0,
             total_lines: 600,
             total_estimated_tokens: 5000,
+            errors: vec![],
+            version: "0.0.0".to_string(),
         };
         let out = render(&r);
         assert!(out.contains("\tH\tOVS\t"), "expected short labels H and OVS");
@@ -285,11 +358,14 @@ mod tests {
                 structural_entropy_score: 0,
                 context_waste_ratio: 0.0,
                 estimated_waste_pct: 0,
+            reasoning_complexity_score: 0,
             },
             files_analyzed: 1,
             files_skipped: 0,
             total_lines: 500,
             total_estimated_tokens: 4000,
+            errors: vec![],
+            version: "0.0.0".to_string(),
         }
     }
 }

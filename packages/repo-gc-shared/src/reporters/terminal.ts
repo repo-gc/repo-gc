@@ -17,6 +17,18 @@ const KIND_LABEL: Record<FindingKind, string> = {
   [FindingKind.CouplingHotspot]: 'Coupling Hotspot',
   [FindingKind.CodeDuplication]: 'Code Duplication',
   [FindingKind.UnusedImport]: 'Unused Import',
+  [FindingKind.BranchDensity]: 'Branch Density',
+  [FindingKind.DeepNesting]: 'Deep Nesting',
+  [FindingKind.TypeComplexity]: 'Type Complexity',
+  [FindingKind.CommentRatio]: 'Comment Ratio',
+  [FindingKind.ImplicitControl]: 'Implicit Control',
+  [FindingKind.ErrorSwallow]: 'Error Swallow',
+  [FindingKind.DangerousPattern]: 'Dangerous Pattern',
+  [FindingKind.MutableGlobal]: 'Mutable Global',
+  [FindingKind.NamingEntropy]: 'Naming Entropy',
+  [FindingKind.StringlyTyped]: 'Stringly Typed',
+  [FindingKind.ImportDiversity]: 'Import Diversity',
+  [FindingKind.PlatformDensity]: 'Platform Density',
 };
 
 function scoreBar(score: number): string {

@@ -30,7 +30,9 @@ def analyze(
         total_items = len(info.all_export) if info.all_export else 0
         reexport_count = 1  # one __all__ declaration
 
-    if reexport_count < 3 and total_items < limit and not has_all:
+    if reexport_count < 3:
+        return None
+    if total_items < limit and not has_wildcard:
         return None
 
     severity = Severity.Low

@@ -6,7 +6,10 @@ import {
   analyzeReexportEntropy,
   analyzeDuplication,
   analyzeUnusedImports,
+  analyzeErrorSwallow,
+  analyzeNamingEntropy,
   Severity,
+  FindingKind,
 } from '../src/shared/index';
 
 function makeFileData(overrides: Partial<import('../src/shared/types').FileData> = {}): import('../src/shared/types').FileData {
@@ -28,6 +31,7 @@ function makeFileData(overrides: Partial<import('../src/shared/types').FileData>
     allExport: null,
     exports: [],
     functionBodies: [],
+    emptyCatchCount: 0,
     ...overrides,
   };
 }
@@ -37,13 +41,13 @@ function makeFileData(overrides: Partial<import('../src/shared/types').FileData>
 describe('analyzeContextBombs', () => {
   it('returns null when under line limit', () => {
     const data = makeFileData({ lineCount: 100, sizeBytes: 2000 });
-    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).toBeNull();
   });
 
   it('returns Medium severity at 1x limit', () => {
     const data = makeFileData({ lineCount: 500, sizeBytes: 20000 });
-    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).not.toBeNull();
     expect(result!.severity).toBe(Severity.Medium);
     expect(result!.confidence).toBe(0.75);
@@ -51,7 +55,7 @@ describe('analyzeContextBombs', () => {
 
   it('returns High severity at 2x limit with confidence 0.85', () => {
     const data = makeFileData({ lineCount: 1000, sizeBytes: 40000 });
-    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).not.toBeNull();
     expect(result!.severity).toBe(Severity.High);
     expect(result!.confidence).toBe(0.85);
@@ -59,7 +63,7 @@ describe('analyzeContextBombs', () => {
 
   it('returns Critical severity at 4x limit with confidence 0.95', () => {
     const data = makeFileData({ lineCount: 2000, sizeBytes: 80000 });
-    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).not.toBeNull();
     expect(result!.severity).toBe(Severity.Critical);
     expect(result!.confidence).toBe(0.95);
@@ -67,7 +71,7 @@ describe('analyzeContextBombs', () => {
 
   it('includes function_count and class_count in evidence when thresholds met', () => {
     const data = makeFileData({ lineCount: 600, sizeBytes: 24000, functionCount: 15, classCount: 5 });
-    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeContextBombs(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result!.evidence.some(e => e.includes('function_count: 15'))).toBe(true);
     expect(result!.evidence.some(e => e.includes('class_count: 5'))).toBe(true);
   });
@@ -120,14 +124,14 @@ describe('analyzeCoupling', () => {
   it('returns empty when under both limits', () => {
     const data = makeFileData();
     const graph = { fanIn: new Map([['/root/src/foo.ts', 3]]), fanOut: new Map([['/root/src/foo.ts', 5]]) };
-    const result = analyzeCoupling(data, graph, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeCoupling(data, graph, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).toHaveLength(0);
   });
 
   it('classifies high fan-in as api pattern', () => {
     const data = makeFileData();
     const graph = { fanIn: new Map([['/root/src/foo.ts', 15]]), fanOut: new Map() };
-    const result = analyzeCoupling(data, graph, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeCoupling(data, graph, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).toHaveLength(1);
     expect(result[0].evidence.some(e => e.includes('pattern: api'))).toBe(true);
     expect(result[0].confidence).toBe(0.65);
@@ -136,7 +140,7 @@ describe('analyzeCoupling', () => {
   it('uses ch- prefix', () => {
     const data = makeFileData();
     const graph = { fanIn: new Map([['/root/src/foo.ts', 15]]), fanOut: new Map() };
-    const result = analyzeCoupling(data, graph, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeCoupling(data, graph, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result[0].id).toMatch(/^ch-\d{3}$/);
   });
 });
@@ -148,7 +152,7 @@ describe('analyzeReexportEntropy', () => {
     const data = makeFileData({
       exports: [{ sourcePath: './a', itemCount: 1, isWildcard: false }],
     });
-    const result = analyzeReexportEntropy(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeReexportEntropy(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).toBeNull();
   });
 
@@ -160,7 +164,7 @@ describe('analyzeReexportEntropy', () => {
         { sourcePath: './c', itemCount: 4, isWildcard: true },
       ],
     });
-    const result = analyzeReexportEntropy(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeReexportEntropy(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result).not.toBeNull();
     expect(result!.severity).toBe(Severity.High);
   });
@@ -173,7 +177,7 @@ describe('analyzeReexportEntropy', () => {
         { sourcePath: './c', itemCount: 5, isWildcard: false },
       ],
     });
-    const result = analyzeReexportEntropy(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10 }, { value: 1 });
+    const result = analyzeReexportEntropy(data, { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 }, { value: 1 });
     expect(result!.id).toMatch(/^re-\d{3}$/);
   });
 });
@@ -287,5 +291,201 @@ describe('analyzeUnusedImports', () => {
     });
     const result = analyzeUnusedImports(data, { value: 1 });
     expect(result!.id).toMatch(/^ui-\d{3}$/);
+  });
+});
+
+// ─── error-swallow ────────────────────────────────────────────
+
+describe('analyzeErrorSwallow', () => {
+  it('returns null when count is within limit', () => {
+    const data = makeFileData({ emptyCatchCount: 1 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result).toBeNull();
+  });
+
+  it('returns null when count equals limit', () => {
+    const data = makeFileData({ emptyCatchCount: 2 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result).toBeNull();
+  });
+
+  it('returns Low severity at count 2 (just over strict limit)', () => {
+    const data = makeFileData({ emptyCatchCount: 2 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 1 },
+      { value: 1 },
+    );
+    expect(result).not.toBeNull();
+    expect(result!.severity).toBe(Severity.Low);
+    expect(result!.confidence).toBe(0.75);
+  });
+
+  it('returns Medium severity at count 3 with limit 0', () => {
+    const data = makeFileData({ emptyCatchCount: 3 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 0 },
+      { value: 1 },
+    );
+    expect(result).not.toBeNull();
+    expect(result!.severity).toBe(Severity.Medium);
+  });
+
+  it('returns Medium severity at count 4', () => {
+    const data = makeFileData({ emptyCatchCount: 4 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result!.severity).toBe(Severity.Medium);
+  });
+
+  it('returns High severity at count 5+', () => {
+    const data = makeFileData({ emptyCatchCount: 5 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result!.severity).toBe(Severity.High);
+  });
+
+  it('returns High severity at count 10', () => {
+    const data = makeFileData({ emptyCatchCount: 10 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result!.severity).toBe(Severity.High);
+  });
+
+  it('uses es- prefix', () => {
+    const data = makeFileData({ emptyCatchCount: 3 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result!.id).toMatch(/^es-\d{3}$/);
+  });
+
+  it('has correct FindingKind', () => {
+    const data = makeFileData({ emptyCatchCount: 3 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result!.kind).toBe(FindingKind.ErrorSwallow);
+  });
+
+  it('includes correct evidence keys', () => {
+    const data = makeFileData({ emptyCatchCount: 3 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      { value: 1 },
+    );
+    expect(result!.evidence.some((e) => e.startsWith('empty_catch_count:'))).toBe(true);
+    expect(result!.evidence.some((e) => e.startsWith('limit:'))).toBe(true);
+    expect(result!.evidence.some((e) => e.startsWith('preview:'))).toBe(true);
+  });
+
+  it('increments idCounter', () => {
+    const counter = { value: 5 };
+    const data = makeFileData({ emptyCatchCount: 3 });
+    const result = analyzeErrorSwallow(
+      data,
+      { lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15, reexportLimit: 10, emptyCatchLimit: 2 },
+      counter,
+    );
+    expect(result!.id).toBe('es-005');
+    expect(counter.value).toBe(6);
+  });
+});
+
+// ─── naming-entropy ────────────────────────────────────────────
+
+describe('analyzeNamingEntropy', () => {
+  const defaults = {
+    lineCountLimit: 500, fanInLimit: 10, fanOutLimit: 15,
+    reexportLimit: 10, emptyCatchLimit: 2, branchDensityLimit: 12,
+    nestingDepthLimit: 6, typeDepthLimit: 4, commentRatioMin: 0.03,
+    commentRatioMax: 0.30, decoratorDensityLimit: 0.50,
+    dangerousPatternLimit: 5, mutableGlobalLimit: 5,
+    stringComparisonLimit: 10, platformConditionalLimit: 5,
+    importDomainLimit: 10,
+  };
+
+  it('returns null when too few identifiers', () => {
+    const data = makeFileData({ allIdentifiers: new Set(['x', 'y', 'foo', 'bar', 'baz']) });
+    const result = analyzeNamingEntropy(data, defaults, { value: 1 });
+    expect(result).toBeNull();
+  });
+
+  it('returns null when all identifiers use same convention', () => {
+    const idents = new Set<string>();
+    for (let i = 0; i < 15; i++) idents.add(`snake_case_name_${i}`);
+    const data = makeFileData({ allIdentifiers: idents });
+    const result = analyzeNamingEntropy(data, defaults, { value: 1 });
+    expect(result).toBeNull();
+  });
+
+  it('returns finding with 3+ mixed conventions', () => {
+    const idents = new Set<string>();
+    for (let i = 0; i < 6; i++) idents.add(`snake_val_${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`camelValue${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`PascalType${i}`);
+    const data = makeFileData({ allIdentifiers: idents });
+    const result = analyzeNamingEntropy(data, defaults, { value: 1 });
+    expect(result).not.toBeNull();
+    expect(result!.kind).toBe(FindingKind.NamingEntropy);
+    expect(result!.severity).toBe(Severity.Low);
+    expect(result!.confidence).toBe(0.50);
+  });
+
+  it('uses ne- prefix', () => {
+    const idents = new Set<string>();
+    for (let i = 0; i < 6; i++) idents.add(`snake_val_${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`camelValue${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`PascalType${i}`);
+    const data = makeFileData({ allIdentifiers: idents });
+    const result = analyzeNamingEntropy(data, defaults, { value: 1 });
+    expect(result!.id).toMatch(/^ne-\d{3}$/);
+  });
+
+  it('includes correct evidence keys', () => {
+    const idents = new Set<string>();
+    for (let i = 0; i < 6; i++) idents.add(`snake_val_${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`camelValue${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`PascalType${i}`);
+    const data = makeFileData({ allIdentifiers: idents });
+    const result = analyzeNamingEntropy(data, defaults, { value: 1 });
+    expect(result!.evidence.some(e => e.startsWith('convention_counts:'))).toBe(true);
+    expect(result!.evidence.some(e => e.startsWith('dominant_convention:'))).toBe(true);
+    expect(result!.evidence.some(e => e.startsWith('mixed_count:'))).toBe(true);
+  });
+
+  it('increments idCounter', () => {
+    const idents = new Set<string>();
+    for (let i = 0; i < 6; i++) idents.add(`snake_val_${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`camelValue${i}`);
+    for (let i = 0; i < 6; i++) idents.add(`PascalType${i}`);
+    const counter = { value: 5 };
+    const data = makeFileData({ allIdentifiers: idents });
+    const result = analyzeNamingEntropy(data, defaults, counter);
+    expect(result!.id).toBe('ne-005');
+    expect(counter.value).toBe(6);
   });
 });

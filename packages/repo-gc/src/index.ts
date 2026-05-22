@@ -19,12 +19,16 @@ export { runtimeNotFound, pluginDirNotFound, processExited, outputParseFailed, s
 
 // Shared heuristics
 export {
+  analyzeBranchDensity,
   analyzeContextBombs,
   analyzeDeadWeight,
   analyzeCoupling,
   analyzeReexportEntropy,
   analyzeDuplication,
   analyzeUnusedImports,
+  analyzeErrorSwallow,
+  analyzeDeepNesting,
+  analyzeImportDiversity,
 } from './shared/heuristics';
 export { runHeuristics } from './shared/heuristics';
 export type {

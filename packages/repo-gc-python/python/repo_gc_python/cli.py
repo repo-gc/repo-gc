@@ -42,6 +42,54 @@ class Threshold:
         return {"strict": 5, "normal": 10, "relaxed": 20}[self._level]
 
     @property
+    def branch_density_limit(self) -> int:
+        return {"strict": 8, "normal": 12, "relaxed": 18}[self._level]
+
+    @property
+    def nesting_depth_limit(self) -> int:
+        return {"strict": 4, "normal": 6, "relaxed": 8}[self._level]
+
+    @property
+    def type_depth_limit(self) -> int:
+        return {"strict": 3, "normal": 4, "relaxed": 5}[self._level]
+
+    @property
+    def comment_ratio_min(self) -> float:
+        return {"strict": 0.03, "normal": 0.03, "relaxed": 0.01}[self._level]
+
+    @property
+    def comment_ratio_max(self) -> float:
+        return {"strict": 0.20, "normal": 0.30, "relaxed": 0.50}[self._level]
+
+    @property
+    def decorator_density_limit(self) -> float:
+        return {"strict": 0.33, "normal": 0.50, "relaxed": 0.75}[self._level]
+
+    @property
+    def empty_catch_limit(self) -> int:
+        return {"strict": 1, "normal": 2, "relaxed": 3}[self._level]
+
+    @property
+    def dangerous_pattern_limit(self) -> int:
+        return {"strict": 3, "normal": 5, "relaxed": 10}[self._level]
+
+    @property
+    def mutable_global_limit(self) -> int:
+        return {"strict": 3, "normal": 5, "relaxed": 8}[self._level]
+
+    @property
+    def string_comparison_limit(self) -> int:
+        return {"strict": 5, "normal": 10, "relaxed": 15}[self._level]
+
+    @property
+    def platform_conditional_limit(self) -> int:
+        return {"strict": 3, "normal": 5, "relaxed": 10}[self._level]
+
+    @property
+    def import_domain_limit(self) -> int:
+        return {"strict": 8, "normal": 10, "relaxed": 14}[self._level]
+
+    @property
     def level(self) -> str:
         return self._level
 
@@ -89,12 +137,20 @@ def analyze(path: Path, threshold: Threshold, include_tests: bool) -> Report:
     """Run the full analysis pipeline: discover → parse → graph → heuristics → score."""
     from .discovery import discover_workspace, enumerate_python_files
     from .graph import ImportGraph
+    from .heuristics import branch_density
     from .heuristics import context_bombs
     from .heuristics import coupling
     from .heuristics import dead_weight
     from .heuristics import duplication
+    from .heuristics import import_diversity
     from .heuristics import reexport_entropy
+    from .heuristics import error_swallow
     from .heuristics import unused_imports
+    from .heuristics import deep_nesting
+    from .heuristics import dangerous_pattern
+    from .heuristics import naming_entropy
+    from .heuristics import type_complexity
+    from .heuristics import implicit_control
     from .parsing import FileInfo, extract_file_info
     from .scoring import compute_global_score
 
@@ -120,43 +176,144 @@ def analyze(path: Path, threshold: Threshold, include_tests: bool) -> Report:
 
     graph = ImportGraph.build(infos, workspace.root)
 
+    # Build path->info lookup map to avoid O(n^2) scans per file
+    info_by_path: dict[Path, FileInfo] = {info.path: info for info in infos}
+
     # Run all heuristics
     findings: list[Finding] = []
     counter = 0
 
-    for i, pf in enumerate(pfiles):
-        info = next((x for x in infos if x.path == pf.path), None)
+    for pf in pfiles:
+        info = info_by_path.get(pf.path)
         if info is None:
             continue
 
-        # Per-file heuristics
-        result = context_bombs.analyze(pf, info, threshold, counter + 1)
-        if result:
-            findings.append(result)
-            counter += 1
+        # Per-file heuristics (with error isolation matching run-heuristics.ts)
+        try:
+            result = context_bombs.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: context-bombs: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
 
-        result = reexport_entropy.analyze(pf, info, threshold, counter + 1)
-        if result:
-            findings.append(result)
-            counter += 1
+        try:
+            result = reexport_entropy.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: reexport-entropy: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
 
-        result = coupling.analyze(pf, graph, threshold, counter + 1)
-        if result:
-            findings.append(result)
-            counter += 1
+        try:
+            result = coupling.analyze(pf, graph, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: coupling: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
 
-        result = unused_imports.analyze(pf, info, threshold, counter + 1)
-        if result:
-            findings.append(result)
-            counter += 1
+        try:
+            result = unused_imports.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: unused-imports: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = error_swallow.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: error-swallow: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = branch_density.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: branch-density: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = deep_nesting.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: deep-nesting: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = import_diversity.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: import-diversity: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = dangerous_pattern.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: dangerous-pattern: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = naming_entropy.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: naming-entropy: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = type_complexity.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: type-complexity: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
+        try:
+            result = implicit_control.analyze(pf, info, threshold, counter + 1)
+        except Exception as exc:
+            errors.append(f"{pf.relative_path}: implicit-control: {exc}")
+        else:
+            if result:
+                findings.append(result)
+                counter += 1
+
 
     # Global heuristics (operate on all files at once)
-    dw_findings = dead_weight.analyze_orphaned_files(pfiles, infos, counter)
-    findings.extend(dw_findings)
-    counter += len(dw_findings)
+    try:
+        dw_findings = dead_weight.analyze_orphaned_files(pfiles, infos, graph, counter)
+    except Exception as exc:
+        errors.append(f"dead-weight: {exc}")
+    else:
+        findings.extend(dw_findings)
+        counter += len(dw_findings)
 
-    dup_findings = duplication.analyze_duplicates(infos, counter)
-    findings.extend(dup_findings)
+    try:
+        dup_findings = duplication.analyze_duplicates(infos, counter)
+    except Exception as exc:
+        errors.append(f"duplication: {exc}")
+    else:
+        findings.extend(dup_findings)
+        counter += len(dup_findings)
 
     # Sort by severity weight descending
     findings.sort(key=lambda f: f.severity.weight, reverse=True)
@@ -171,6 +328,8 @@ def analyze(path: Path, threshold: Threshold, include_tests: bool) -> Report:
         files_skipped=files_skipped,
         total_lines=total_lines,
         total_estimated_tokens=total_estimated_tokens,
+        errors=errors,
+        version=__version__,
     )
 
 

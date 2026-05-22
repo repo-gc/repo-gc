@@ -42,6 +42,10 @@ export {
   analyzeReexportEntropy,
   analyzeDuplication,
   analyzeUnusedImports,
+  analyzeDeepNesting,
+  analyzeCommentRatio,
+  analyzeStringlyTyped,
+  analyzeNamingEntropy,
 } from './heuristics';
 export type {
   DeadWeightOptions,

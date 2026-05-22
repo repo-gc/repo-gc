@@ -50,6 +50,7 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
     let files = discovery::enumerate_rust_files(&workspace.packages, &workspace.root, include_tests);
 
     if files.is_empty() {
+        let version = env!("CARGO_PKG_VERSION").to_string();
         return Ok(Report {
             findings: vec![],
             global_score: types::GlobalScore {
@@ -58,11 +59,14 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
                 structural_entropy_score: 0,
                 context_waste_ratio: 0.0,
                 estimated_waste_pct: 0,
+            reasoning_complexity_score: 0,
             },
             files_analyzed: 0,
             files_skipped: 0,
             total_lines: 0,
             total_estimated_tokens: 0,
+            errors: vec![],
+            version,
         });
     }
 
@@ -105,13 +109,33 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
         .sum();
 
     let mut findings = vec![];
+    let mut bd = 0usize;
     let mut cb = 0usize;
     let mut re = 0usize;
     let mut ch = 0usize;
     let mut dw = 0usize;
     let mut ui = 0usize;
+    let mut es = 0usize;
+    let mut dn = 0usize;
+    let mut idv = 0usize;
+    let mut dp = 0usize;
+    let mut cr = 0usize;
+    let mut st = 0usize;
+    let mut ne = 0usize;
+    let mut tc = 0usize;
+    let mut ic = 0usize;
 
     for pf in &parsed {
+        if let Some(f) =
+            heuristics::deep_nesting::analyze(&pf.file, &pf.structure, threshold, &mut dn)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::branch_density::analyze(&pf.file, &pf.structure, threshold, &mut bd)
+        {
+            findings.push(f);
+        }
         if let Some(f) =
             heuristics::context_bombs::analyze(&pf.file, &pf.structure, threshold, &mut cb)
         {
@@ -130,18 +154,60 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
         {
             findings.push(f);
         }
+        if let Some(f) =
+            heuristics::error_swallow::analyze(&pf.file, &pf.structure, threshold, &mut es)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::import_diversity::analyze(&pf.file, &pf.structure, threshold, &mut idv)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::dangerous_pattern::analyze(&pf.file, &pf.structure, threshold, &mut dp)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::comment_ratio::analyze(&pf.file, &pf.structure, threshold, &mut cr)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::stringly_typed::analyze(&pf.file, &pf.structure, threshold, &mut st)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::naming_entropy::analyze(&pf.file, &pf.structure, threshold, &mut ne)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::type_complexity::analyze(&pf.file, &pf.structure, threshold, &mut tc)
+        {
+            findings.push(f);
+        }
+        if let Some(f) =
+            heuristics::implicit_control::analyze(&pf.file, &pf.structure, threshold, &mut ic)
+        {
+            findings.push(f);
+        }
     }
 
     let all_files: Vec<_> = parsed.iter().map(|pf| pf.file.clone()).collect();
     findings.extend(heuristics::dead_weight::analyze_orphaned_files(
         &all_files,
         &all_structures,
+        &graph,
         &mut dw,
     ));
     let mut dup = 0usize;
     findings.extend(heuristics::duplication::analyze_duplicates(&all_structures, &mut dup));
     findings.sort_by(|a, b| b.severity.weight().partial_cmp(&a.severity.weight()).unwrap());
 
+    let version = env!("CARGO_PKG_VERSION").to_string();
     Ok(Report {
         global_score: scoring::compute_global_score(&findings, files.len(), total_estimated_tokens),
         findings,
@@ -149,6 +215,8 @@ fn analyze(start: &Path, threshold: &Threshold, include_tests: bool) -> Result<R
         files_skipped,
         total_lines,
         total_estimated_tokens,
+        errors: vec![],
+        version,
     })
 }
 

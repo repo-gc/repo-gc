@@ -73,6 +73,14 @@ export function toFileData(
     allExport: null,
     exports: info.exports,
     functionBodies: buildFunctionBodies(info),
+    branchCount: info.branchCount ?? 0,
+    maxNestingDepth: info.maxNestingDepth ?? 0,
+    maxTypeDepth: info.maxTypeDepth ?? 0,
+    commentLineCount: info.commentLineCount ?? 0,
+    decoratorCount: info.decoratorCount ?? 0,
+    emptyCatchCount: info.emptyCatchCount ?? 0,
+    dangerousPatternCount: info.dangerousPatternCount ?? 0,
+    stringComparisonCount: info.stringComparisonCount ?? 0,
   };
 }
 

@@ -13,6 +13,20 @@ function isTestOnlyName(name: string, patterns: string[]): boolean {
 }
 
 /**
+ * Skip function bodies that are single-statement delegations.
+ * Mirrors Rust's syn-based `is_trivial_body` and Python's AST-based check.
+ * Uses string heuristics since the shared layer has no AST parser.
+ */
+function isTrivialBody(rawBody: string): boolean {
+  const inner = rawBody.replace(/^\{|\}$/g, '').trim();
+  if (inner.length === 0) return true;
+  // Count semicolons as statement separators, skip single-statement bodies
+  const semiCount = (inner.match(/;/g) || []).length;
+  if (semiCount <= 1) return true;
+  return false;
+}
+
+/**
  * Type 2 clone detection.
  *
  * Plugins pre-normalize function bodies (identifier replacement + whitespace strip).
@@ -31,6 +45,9 @@ export function analyzeDuplication(
   for (const file of files) {
     for (const fn of file.functionBodies) {
       if (isTestOnlyName(fn.name, testNamePatterns)) continue;
+
+      // Skip trivial one-statement bodies (delegation wrappers, not meaningful duplication)
+      if (isTrivialBody(fn.rawBody)) continue;
 
       const key = fn.normalizedBody;
       if (key.length < MIN_BODY_LEN) continue;

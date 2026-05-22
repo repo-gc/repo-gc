@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from ..discovery import PythonFile
+from ..graph import ImportGraph
 from ..parsing import FileInfo
 from ..types import Finding, FindingKind, Severity
 from .context_bombs import estimate_tokens
@@ -11,6 +12,7 @@ from .context_bombs import estimate_tokens
 def analyze_orphaned_files(
     pfiles: list[PythonFile],
     infos: list[FileInfo],
+    graph: ImportGraph,
     counter: int,
 ) -> list[Finding]:
     # Build a set of all module paths referenced by any file's imports.
@@ -50,6 +52,14 @@ def analyze_orphaned_files(
         )
 
         if not is_referenced:
+            # Skip files with <10 lines (empty/near-empty files are not meaningful dead weight)
+            if pfile.line_count < 10:
+                continue
+
+            # Check import-graph fan-in: if any other file imports this one, it is not orphaned
+            if graph.fan_in.get(pfile.path, 0) > 0:
+                continue
+
             severity = (
                 Severity.Critical
                 if pfile.line_count >= 1000
@@ -72,6 +82,7 @@ def analyze_orphaned_files(
                         f"module_path: {module_path}",
                         f"line_count: {pfile.line_count}",
                         f"stem: {stem}",
+                        f"estimated_tokens: {estimate_tokens(pfile.size_bytes)}",
                     ],
                     suggested_next_step="",
                     estimated_tokens=estimate_tokens(pfile.size_bytes),

@@ -7,7 +7,9 @@ Collects structural information from .py files for the import graph and heuristi
 from __future__ import annotations
 
 import ast
+import io
 import logging
+import tokenize
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -34,6 +36,16 @@ class FileInfo:
     is_entry_point: bool = False
     has_star_imports: bool = False  # contains `from x import *`
     all_export: Optional[list[str]] = None  # __all__ declaration if present
+    branch_count: int = 0
+    max_nesting_depth: int = 0
+    max_type_depth: int = 0
+    comment_line_count: int = 0
+    decorator_count: int = 0
+    empty_catch_count: int = 0
+    dangerous_pattern_count: int = 0
+    mutable_global_count: int = 0
+    string_comparison_count: int = 0
+    platform_conditional_count: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -186,13 +198,15 @@ class _FileVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.file_info.function_count += 1
-        self.file_info.public_function_count += 1  # top-level = public in Python
+        self.file_info.public_function_count += 1
+        self.file_info.decorator_count += len(node.decorator_list)  # top-level = public in Python
         raw_body, norm_body = _normalize_body(node.body)
         self.file_info.function_bodies.append((node.name, raw_body, norm_body))
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self.file_info.function_count += 1
         self.file_info.public_function_count += 1
+        self.file_info.decorator_count += len(node.decorator_list)
         raw_body, norm_body = _normalize_body(node.body)
         self.file_info.function_bodies.append((node.name, raw_body, norm_body))
 
@@ -200,6 +214,7 @@ class _FileVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.file_info.class_count += 1
+        self.file_info.decorator_count += len(node.decorator_list)
         # Do NOT recurse -- methods inside classes are not top-level functions.
 
     # -- imports ------------------------------------------------------------
@@ -393,6 +408,229 @@ class _IdentCollector(ast.NodeVisitor):
 # ---------------------------------------------------------------------------
 
 
+def _count_branches(tree: ast.AST) -> int:
+    """Count branch nodes in a Python AST.
+
+    Counts: ast.If, ast.For, ast.AsyncFor, ast.While, ast.Match arms,
+    ast.Try (each except handler), ast.IfExp.
+    """
+    count = 0
+    for node in ast.walk(tree):
+        if isinstance(node, ast.If):
+            count += 1
+        elif isinstance(node, ast.For):
+            count += 1
+        elif isinstance(node, ast.AsyncFor):
+            count += 1
+        elif isinstance(node, ast.While):
+            count += 1
+        elif isinstance(node, ast.Match):
+            count += len(node.cases)
+        elif isinstance(node, ast.Try):
+            count += len(node.handlers)
+        elif isinstance(node, ast.IfExp):
+            count += 1
+    return count
+
+
+def _count_comment_lines(source: str) -> int:
+    """Count comment-only lines using the stdlib tokenize module.
+
+    tokenize properly handles string literals containing ``#`` and other
+    edge cases that simple text scanning would miss.
+    """
+    count = 0
+    try:
+        tokens = tokenize.generate_tokens(io.StringIO(source).readline)
+        for t in tokens:
+            if t.type == tokenize.COMMENT:
+                count += 1
+    except tokenize.TokenError:
+        pass
+    return count
+
+
+def _count_string_comparisons(tree: ast.AST) -> int:
+    """Count string literals used in comparisons and match patterns.
+
+    Detects:
+    - ast.Compare with ast.Eq/NotEq and a string Constant on either side
+    - ast.Match cases with ast.MatchValue(ast.Constant(str)) pattern (Python 3.10+)
+    """
+    count = 0
+    for node in ast.walk(tree):
+        # x == "foo" or "bar" != y
+        if isinstance(node, ast.Compare):
+            if any(isinstance(op, (ast.Eq, ast.NotEq)) for op in node.ops):
+                if isinstance(node.left, ast.Constant) and isinstance(node.left.value, str):
+                    count += 1
+                for comp in node.comparators:
+                    if isinstance(comp, ast.Constant) and isinstance(comp.value, str):
+                        count += 1
+        # case "foo": (Python 3.10+)
+        elif isinstance(node, ast.Match):
+            for case in node.cases:
+                if (isinstance(case.pattern, ast.MatchValue)
+                        and isinstance(case.pattern.value, ast.Constant)
+                        and isinstance(case.pattern.value.value, str)):
+                    count += 1
+    return count
+
+
+def _count_dangerous_patterns(tree: ast.AST) -> int:
+    """Count dangerous code patterns: eval, exec, compile, __import__.
+
+    Excludes ``ast.literal_eval`` (safe).
+    """
+    count = 0
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in (
+                "eval",
+                "exec",
+                "compile",
+                "__import__",
+            ):
+                count += 1
+    return count
+
+
+def _count_empty_excepts(tree: ast.AST) -> int:
+    """Count try/except handlers with empty bodies (only pass or ...)."""
+    count = 0
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Try):
+            for handler in node.handlers:
+                if len(handler.body) == 0:
+                    count += 1
+                elif len(handler.body) == 1 and isinstance(handler.body[0], ast.Pass):
+                    count += 1
+                elif (
+                    len(handler.body) == 1
+                    and isinstance(handler.body[0], ast.Expr)
+                    and isinstance(handler.body[0].value, ast.Constant)
+                    and handler.body[0].value.value is ...
+                ):
+                    count += 1
+    return count
+
+
+def _type_annotation_depth(node: ast.AST) -> int:
+    """Recursively compute the nesting depth of a type expression.
+
+    Subscript (X[Y]) adds 1 and recurses into the slice.
+    BinOp with BitOr (X | Y) adds 1 and takes max of children.
+    Other nodes (Name, Constant, etc.) have depth 0.
+    """
+    if isinstance(node, ast.Subscript):
+        # X[Y] -- e.g. List[int], Dict[str, int]
+        slice_node = node.slice
+        if isinstance(slice_node, ast.Tuple):
+            # Multi-arg generic: Dict[str, int]
+            inner = (_type_annotation_depth(elt) for elt in slice_node.elts)
+            return 1 + max(inner, default=0)
+        else:
+            return 1 + _type_annotation_depth(slice_node)
+
+    elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+        # str | int | None (union type syntax, Python 3.10+)
+        return 1 + max(_type_annotation_depth(node.left), _type_annotation_depth(node.right))
+
+    elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+        # PEP 563 string annotation -- re-parse and measure
+        try:
+            tree = ast.parse(node.value, mode="eval")
+            return _type_annotation_depth(tree.body)
+        except SyntaxError:
+            return 0
+
+    return 0
+
+
+def _measure_max_type_depth(tree: ast.AST, has_future_annotations: bool) -> int:
+    """Walk the AST and find the maximum type annotation nesting depth."""
+    max_depth = 0
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.returns:
+                d = _type_annotation_depth(node.returns)
+                max_depth = max(max_depth, d)
+            for arg in node.args.args + node.args.kwonlyargs + node.args.posonlyargs:
+                if arg.annotation:
+                    d = _type_annotation_depth(arg.annotation)
+                    max_depth = max(max_depth, d)
+            if node.args.vararg and node.args.vararg.annotation:
+                d = _type_annotation_depth(node.args.vararg.annotation)
+                max_depth = max(max_depth, d)
+            if node.args.kwarg and node.args.kwarg.annotation:
+                d = _type_annotation_depth(node.args.kwarg.annotation)
+                max_depth = max(max_depth, d)
+
+        elif isinstance(node, ast.AnnAssign):
+            if node.annotation:
+                d = _type_annotation_depth(node.annotation)
+                max_depth = max(max_depth, d)
+
+    return max_depth
+
+
+def _measure_nesting_depth(tree: ast.AST) -> int:
+    """Walk the AST and find the maximum nesting depth.
+
+    Counts depth increases for control-flow and structure nodes:
+    if/for/while/try/with/match, function defs, class defs, and their
+    async variants.  Uses a depth-first traversal with manual depth tracking.
+    """
+    ctx: dict[str, int] = {"depth": 0, "max": 0}
+
+    class _DepthVisitor(ast.NodeVisitor):
+        """Visitor that increments depth for nesting-producing nodes."""
+
+        def _enter(self, node: ast.AST) -> None:
+            ctx["depth"] += 1
+            if ctx["depth"] > ctx["max"]:
+                ctx["max"] = ctx["depth"]
+            self.generic_visit(node)
+            ctx["depth"] -= 1
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            self._enter(node)
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+            self._enter(node)
+
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
+            self._enter(node)
+
+        def visit_If(self, node: ast.If) -> None:
+            self._enter(node)
+
+        def visit_For(self, node: ast.For) -> None:
+            self._enter(node)
+
+        def visit_AsyncFor(self, node: ast.AsyncFor) -> None:
+            self._enter(node)
+
+        def visit_While(self, node: ast.While) -> None:
+            self._enter(node)
+
+        def visit_Try(self, node: ast.Try) -> None:
+            self._enter(node)
+
+        def visit_With(self, node: ast.With) -> None:
+            self._enter(node)
+
+        def visit_AsyncWith(self, node: ast.AsyncWith) -> None:
+            self._enter(node)
+
+        def visit_Match(self, node: ast.Match) -> None:
+            self._enter(node)
+
+    _DepthVisitor().visit(tree)
+    return ctx["max"]
+
+
 def _is_entry_point(info: FileInfo, has_main_guard: bool) -> bool:
     """Determine whether *info* describes a project entry point."""
     if info.is_init_file:
@@ -472,5 +710,25 @@ def extract_file_info(
 
     # -- entry point detection ----------------------------------------------
     info.is_entry_point = _is_entry_point(info, visitor._has_main_guard)
+
+    # -- empty except count -----------------------------------------------
+    info.empty_catch_count = _count_empty_excepts(tree)
+
+    # -- branch count ------------------------------------------------------
+    info.branch_count = _count_branches(tree)
+    # -- nesting depth ----------------------------------------------------
+    info.max_nesting_depth = _measure_nesting_depth(tree)
+
+    # -- type complexity -------------------------------------------------
+    info.max_type_depth = _measure_max_type_depth(tree, visitor.has_future_annotations())
+
+    # -- dangerous pattern count ------------------------------------------
+    info.dangerous_pattern_count = _count_dangerous_patterns(tree)
+
+    # -- comment line count ------------------------------------------------
+    info.comment_line_count = _count_comment_lines(source)
+
+    # -- string comparison count -------------------------------------------
+    info.string_comparison_count = _count_string_comparisons(tree)
 
     return info

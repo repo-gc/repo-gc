@@ -44,6 +44,16 @@ pub enum FindingKind {
     CouplingHotspot,
     CodeDuplication,
     UnusedImport,
+    BranchDensity,
+    DeepNesting,
+    TypeComplexity,
+    CommentRatio,
+    ImplicitControl,
+    ErrorSwallow,
+    DangerousPattern,
+    NamingEntropy,
+    StringlyTyped,
+    ImportDiversity,
 }
 
 impl FindingKind {
@@ -55,6 +65,16 @@ impl FindingKind {
             FindingKind::CouplingHotspot => "coupling-hotspot",
             FindingKind::CodeDuplication => "code-duplication",
             FindingKind::UnusedImport => "unused-import",
+            FindingKind::BranchDensity => "branch-density",
+            FindingKind::DeepNesting => "deep-nesting",
+            FindingKind::TypeComplexity => "type-complexity",
+            FindingKind::CommentRatio => "comment-ratio",
+            FindingKind::ImplicitControl => "implicit-control",
+            FindingKind::ErrorSwallow => "error-swallow",
+            FindingKind::DangerousPattern => "dangerous-pattern",
+            FindingKind::NamingEntropy => "naming-entropy",
+            FindingKind::StringlyTyped => "stringly-typed",
+            FindingKind::ImportDiversity => "import-diversity",
         }
     }
     /// Short code for LLM/token-efficient output
@@ -66,6 +86,16 @@ impl FindingKind {
             FindingKind::CouplingHotspot => "COUP",
             FindingKind::CodeDuplication => "DUP",
             FindingKind::UnusedImport => "ZOMB",
+            FindingKind::BranchDensity => "BRAN",
+            FindingKind::DeepNesting => "NEST",
+            FindingKind::TypeComplexity => "TYPE",
+            FindingKind::CommentRatio => "CMNT",
+            FindingKind::ImplicitControl => "HIDE",
+            FindingKind::ErrorSwallow => "SWAL",
+            FindingKind::DangerousPattern => "DANG",
+            FindingKind::NamingEntropy => "MIXD",
+            FindingKind::StringlyTyped => "STRY",
+            FindingKind::ImportDiversity => "GODF",
         }
     }
 }
@@ -89,6 +119,7 @@ pub struct GlobalScore {
     pub ai_friction_score: u32,
     pub context_waste_score: u32,
     pub structural_entropy_score: u32,
+    pub reasoning_complexity_score: u32,
     pub context_waste_ratio: f64,
     pub estimated_waste_pct: u32,
 }
@@ -101,6 +132,8 @@ pub struct Report {
     pub files_skipped: usize,
     pub total_lines: usize,
     pub total_estimated_tokens: usize,
+    pub errors: Vec<String>,
+    pub version: String,
 }
 
 #[cfg(test)]
@@ -118,6 +151,31 @@ mod tests {
     fn finding_kind_labels_are_stable() {
         assert_eq!(FindingKind::ContextBomb.label(), "context-bomb");
         assert_eq!(FindingKind::CouplingHotspot.label(), "coupling-hotspot");
+        assert_eq!(FindingKind::BranchDensity.label(), "branch-density");
+        assert_eq!(FindingKind::DeepNesting.label(), "deep-nesting");
+        assert_eq!(FindingKind::TypeComplexity.label(), "type-complexity");
+        assert_eq!(FindingKind::CommentRatio.label(), "comment-ratio");
+        assert_eq!(FindingKind::ImplicitControl.label(), "implicit-control");
+        assert_eq!(FindingKind::ErrorSwallow.label(), "error-swallow");
+        assert_eq!(FindingKind::DangerousPattern.label(), "dangerous-pattern");
+        assert_eq!(FindingKind::NamingEntropy.label(), "naming-entropy");
+        assert_eq!(FindingKind::StringlyTyped.label(), "stringly-typed");
+        assert_eq!(FindingKind::ImportDiversity.label(), "import-diversity");
+    }
+
+    #[test]
+    fn finding_kind_llm_labels_are_stable() {
+        assert_eq!(FindingKind::ContextBomb.llm_label(), "OVS");
+        assert_eq!(FindingKind::BranchDensity.llm_label(), "BRAN");
+        assert_eq!(FindingKind::DeepNesting.llm_label(), "NEST");
+        assert_eq!(FindingKind::TypeComplexity.llm_label(), "TYPE");
+        assert_eq!(FindingKind::CommentRatio.llm_label(), "CMNT");
+        assert_eq!(FindingKind::ImplicitControl.llm_label(), "HIDE");
+        assert_eq!(FindingKind::ErrorSwallow.llm_label(), "SWAL");
+        assert_eq!(FindingKind::DangerousPattern.llm_label(), "DANG");
+        assert_eq!(FindingKind::NamingEntropy.llm_label(), "MIXD");
+        assert_eq!(FindingKind::StringlyTyped.llm_label(), "STRY");
+        assert_eq!(FindingKind::ImportDiversity.llm_label(), "GODF");
     }
 
     #[test]

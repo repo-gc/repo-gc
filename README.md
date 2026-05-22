@@ -63,6 +63,37 @@ All checks are **fully deterministic** — no LLM calls, no network, no hallucin
 
 ---
 
+## Research Foundations
+
+AI coding agents process your codebase through a limited context window. Research shows that **what's in that window — and what shouldn't be — directly determines cost, accuracy, and agent success rate**.
+
+### Why context hygiene matters
+
+| Finding | Source |
+|---------|--------|
+| LLM attention degrades significantly on mid-context content — model performance drops ~20% when key information isn't at the start or end of the input | [Liu et al. (2023)](https://arxiv.org/abs/2307.03172) "Lost in the Middle" |
+| Adding irrelevant context to a coding task reduces LLM performance **exponentially** with context length — noise in the prompt compounds across subtasks | [Wolf et al. (2024)](https://arxiv.org/abs/2409.18028) "Compositional Hardness of Code in LLMs" |
+| Real agent trajectories contain **30–60% waste tokens** — cache files, redundant tool output, and expired context accumulate to ~1M tokens per GitHub issue | [AgentDiet (2025)](https://arxiv.org/abs/2509.23586) "Improving LLM Agent Efficiency through Trajectory Reduction" |
+| Removing unnecessary tokens from code before feeding to LLMs **cuts API costs by 24%** with no quality loss; simpler masking often beats LLM summarization (52% cost reduction) | [Wang et al. (2024)](https://dl.acm.org/doi/10.1145/3643753) "SlimCode" (FSE 2024); [JetBrains Research (2025)](https://blog.jetbrains.com/research/2025/12/efficient-context-management/) |
+| In a study of 82,845 real developer-LLM interactions, Python code had **import errors in 20.8%** of generated snippets and undefined variables in 83.4% — unused imports and dead references are both a token drain and an error source | [Zhong et al. (2025)](https://arxiv.org/abs/2509.10402) "Developer-LLM Conversations" |
+
+### How repo-gc applies this research
+
+Each heuristic targets a specific, research-validated source of AI context waste:
+
+| Heuristic | Token-waste pattern detected | Why it drains AI context |
+|-----------|------------------------------|--------------------------|
+| **context-bomb** | Files exceeding token thresholds (500+ lines) | Oversized files crowd out task-relevant content mid-context, where [Liu et al.](https://arxiv.org/abs/2307.03172) show attention is weakest |
+| **dead-weight** | Modules with zero fan-in, never imported by any other file | Unreferenced code occupies context window slots with zero task utility — exactly the "useless information" category [AgentDiet](https://arxiv.org/abs/2509.23586) identifies as 30–60% of agent context |
+| **reexport-entropy** | Deep re-export chains, wildcard barrels, init-file re-export cascades | Each indirection layer forces the LLM to resolve symbols across multiple files — [Wolf et al.](https://arxiv.org/abs/2409.18028) show compositional indirection grows exponentially harder for LLMs |
+| **coupling-hotspot** | High fan-in/fan-out modules (god/api/orch patterns) via instability index | Highly coupled modules force the agent to hold more dependency state in working context; irrelevant context in one subtask leaks into others via shared dependencies |
+| **code-duplication** | Type 2 clones — functions with identical normalized AST bodies across ≥2 files | [Li et al. (2024)](https://arxiv.org/abs/2411.06638) find LLMs struggle to generalize edits across semantically identical code; duplicated logic means a bug fix in one location is likely missed in its clones |
+| **unused-import** | Imported symbols never referenced in the file's identifier set | Dead imports inflate token count with zero semantic value; [SlimCode](https://dl.acm.org/doi/10.1145/3643753) (FSE 2024) shows that removing low-impact tokens reduces API costs without quality loss |
+
+**Methodology summary:** repo-gc statically analyzes your codebase to measure these 6 token-waste vectors, computes a composite AI Friction Score (0–100), and produces a ranked list of findings — so you can fix the patterns that matter most **before** they reach the LLM context window.
+
+---
+
 ## Architecture
 
 ```

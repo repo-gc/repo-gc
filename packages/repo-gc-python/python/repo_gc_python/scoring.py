@@ -22,6 +22,7 @@ def compute_global_score(
         (_weighted([f for f in findings if f.kind == FindingKind.ContextBomb]) / max_expected) * 100
     )
 
+    # Original 5 structural signals
     structural_entropy = _clamp(
         (
             _weighted(
@@ -43,6 +44,35 @@ def compute_global_score(
         * 100
     )
 
+    # New signals: intra-file complexity and control-flow opacity
+    reasoning_complexity = _clamp(
+        (
+            _weighted(
+                [
+                    f
+                    for f in findings
+                    if f.kind
+                    in (
+                        FindingKind.BranchDensity,
+                        FindingKind.DeepNesting,
+                        FindingKind.TypeComplexity,
+                        FindingKind.CommentRatio,
+                        FindingKind.ErrorSwallow,
+                        FindingKind.DangerousPattern,
+                        FindingKind.MutableGlobal,
+                        FindingKind.NamingEntropy,
+                        FindingKind.StringlyTyped,
+                        FindingKind.ImportDiversity,
+                        FindingKind.PlatformDensity,
+                        FindingKind.ImplicitControl,
+                    )
+                ]
+            )
+            / max_expected
+        )
+        * 100
+    )
+
     context_window_tokens = 128_000.0
     context_waste_ratio = total_estimated_tokens / context_window_tokens
     estimated_waste_pct = _clamp(
@@ -53,6 +83,7 @@ def compute_global_score(
         ai_friction_score=ai_friction,
         context_waste_score=context_waste,
         structural_entropy_score=structural_entropy,
+        reasoning_complexity_score=reasoning_complexity,
         context_waste_ratio=context_waste_ratio,
         estimated_waste_pct=estimated_waste_pct,
     )

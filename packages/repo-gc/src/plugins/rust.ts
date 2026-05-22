@@ -33,6 +33,9 @@ const RUST_KIND_MAP: Record<string, FindingKind> = {
   CouplingHotspot: FindingKind.CouplingHotspot,
   CodeDuplication: FindingKind.CodeDuplication,
   UnusedImport: FindingKind.UnusedImport,
+  NamingEntropy: FindingKind.NamingEntropy,
+  TypeComplexity: FindingKind.TypeComplexity,
+  ImplicitControl: FindingKind.ImplicitControl,
 };
 
 const RUST_SEVERITY_MAP: Record<string, Severity> = {

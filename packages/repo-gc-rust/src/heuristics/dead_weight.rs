@@ -1,11 +1,13 @@
 use std::collections::HashSet;
 use crate::discovery::RustFile;
+use crate::graph::ImportGraph;
 use crate::parsing::FileStructure;
 use crate::types::{Finding, FindingKind, Severity};
 
 pub fn analyze_orphaned_files(
     files: &[RustFile],
     structures: &[FileStructure],
+    graph: &ImportGraph,
     counter: &mut usize,
 ) -> Vec<Finding> {
     // Collect every module path that is referenced anywhere:
@@ -65,6 +67,16 @@ pub fn analyze_orphaned_files(
                 let parts: Vec<&str> = module_path.split("::").collect();
                 (1..parts.len()).any(|len| referenced.contains(&parts[..len].join("::")))
             };
+
+        // Skip files with <10 lines (empty/near-empty files are not meaningful dead weight)
+        if file.line_count < 10 {
+            continue;
+        }
+
+        // Check import-graph fan-in: if any other file imports this one, it is not orphaned
+        if graph.get_fan_in(&file.path) > 0 {
+            continue;
+        }
 
         if !is_referenced {
             *counter += 1;
@@ -169,7 +181,8 @@ mod tests {
     fn detects_orphaned_file() {
         let files = vec![mkfile("krate", "orphan"), mkfile("krate", "lib")];
         let structures = vec![mks("src/lib.rs", "krate", "lib", vec![], vec![])];
-        let r = analyze_orphaned_files(&files, &structures, &mut 0);
+        let g = ImportGraph::default();
+        let r = analyze_orphaned_files(&files, &structures, &g, &mut 0);
         assert_eq!(r.len(), 1);
         assert!(r[0].path.to_string_lossy().contains("orphan"));
     }
@@ -185,14 +198,14 @@ mod tests {
             vec![],
             vec!["krate::lib::utils".to_string()],
         )];
-        assert!(analyze_orphaned_files(&files, &structures, &mut 0).is_empty());
+        assert!(analyze_orphaned_files(&files, &structures, &ImportGraph::default(), &mut 0).is_empty());
     }
 
     #[test]
     fn crate_prefix_use_prevents_orphan() {
         let files = vec![mkfile("krate", "utils"), mkfile("krate", "lib")];
         let structures = vec![mks("src/lib.rs", "krate", "lib", vec!["crate::utils::Foo"], vec![])];
-        assert!(analyze_orphaned_files(&files, &structures, &mut 0).is_empty());
+        assert!(analyze_orphaned_files(&files, &structures, &ImportGraph::default(), &mut 0).is_empty());
     }
 
     #[test]
@@ -214,13 +227,13 @@ mod tests {
             ),
             mks("src/discovery/files.rs", "krate", "discovery::files", vec![], vec![]),
         ];
-        assert!(analyze_orphaned_files(&[f], &structures, &mut 0).is_empty());
+        assert!(analyze_orphaned_files(&[f], &structures, &ImportGraph::default(), &mut 0).is_empty());
     }
 
     #[test]
     fn entry_points_never_orphaned() {
         let files = vec![mkfile("krate", "main"), mkfile("krate", "lib"), mkfile("krate", "mod")];
-        assert!(analyze_orphaned_files(&files, &[], &mut 0).is_empty());
+        assert!(analyze_orphaned_files(&files, &[], &ImportGraph::default(), &mut 0).is_empty());
     }
 
     #[test]
@@ -248,7 +261,7 @@ mod tests {
             vec!["crate::utils::Foo"],
             vec![],
         )];
-        let orphans = analyze_orphaned_files(&[file_a, file_b], &structures, &mut 0);
+        let orphans = analyze_orphaned_files(&[file_a, file_b], &structures, &ImportGraph::default(), &mut 0);
         // pkg_b::utils is orphaned, pkg_a::utils is not
         assert_eq!(orphans.len(), 1);
         assert!(orphans[0].path.to_string_lossy().contains("pkg_b"));

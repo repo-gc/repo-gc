@@ -7,6 +7,18 @@ const KIND_HEADER: Record<FindingKind, string> = {
   [FindingKind.CouplingHotspot]: 'Coupling Hotspots',
   [FindingKind.CodeDuplication]: 'Code Duplication',
   [FindingKind.UnusedImport]: 'Unused Imports',
+  [FindingKind.BranchDensity]: 'Branch Density',
+  [FindingKind.DeepNesting]: 'Deep Nesting',
+  [FindingKind.TypeComplexity]: 'Type Complexity',
+  [FindingKind.CommentRatio]: 'Comment Ratio',
+  [FindingKind.ImplicitControl]: 'Implicit Control Flow',
+  [FindingKind.ErrorSwallow]: 'Error Swallowing',
+  [FindingKind.DangerousPattern]: 'Dangerous Patterns',
+  [FindingKind.MutableGlobal]: 'Mutable Globals',
+  [FindingKind.NamingEntropy]: 'Naming Entropy',
+  [FindingKind.StringlyTyped]: 'Stringly Typed',
+  [FindingKind.ImportDiversity]: 'Import Domain Diversity',
+  [FindingKind.PlatformDensity]: 'Platform-Conditional Density',
 };
 
 export function renderMarkdown(report: Report): string {

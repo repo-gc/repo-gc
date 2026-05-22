@@ -30,6 +30,15 @@ export interface FileInfo {
   allIdentifiers: Set<string>;
   importedNames: string[];
   isEntryPoint: boolean;
+  // Phase 1 new counter fields (default 0 until populated by parser)
+  branchCount: number;
+  maxNestingDepth: number;
+  maxTypeDepth: number;
+  commentLineCount: number;
+  decoratorCount: number;
+  emptyCatchCount: number;
+  dangerousPatternCount: number;
+  stringComparisonCount: number;
 }
 
 export interface PackageInfo {

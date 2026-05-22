@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cross-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Rust binary
+        run: cargo build --release -p repo-gc-rust
+
+      - name: Install JS dependencies and build
+        run: |
+          pnpm install
+          pnpm build
+
+      - name: Install Python deps and validation tools
+        run: |
+          pip install -e packages/repo-gc-python/python
+          pip install check-jsonschema
+
+      - name: Validate Rust report against schema
+        run: |
+          ./target/release/repo-gc scan --path test-fixtures/cross-language --format json | \
+            check-jsonschema --schemafile test-fixtures/report-schema.json /dev/stdin
+
+      - name: Validate Node.js report against schema
+        run: |
+          node packages/repo-gc/dist/cli.js scan --path test-fixtures/cross-language --format json | \
+            check-jsonschema --schemafile test-fixtures/report-schema.json /dev/stdin
+
+      - name: Generate reports for cross-language comparison
+        run: |
+          ./target/release/repo-gc scan --path test-fixtures/cross-language --format json > /tmp/report-rust.json
+          node packages/repo-gc/dist/cli.js scan --path test-fixtures/cross-language --format json > /tmp/report-ts.json
+          python -m repo_gc_python scan --path test-fixtures/cross-language --format json > /tmp/report-py.json
+
+      - name: Compare reports across implementations
+        run: |
+          python scripts/ci/compare-reports.py /tmp/report-rust.json /tmp/report-ts.json /tmp/report-py.json -v

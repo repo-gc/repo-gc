@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/repo-gc/repo-gc/test-fixtures/report-schema.json",
+  "title": "repo-gc Report",
+  "description": "Schema for repo-gc analyzer output reports — cross-language validation target",
+
+  "type": "object",
+  "required": [
+    "findings",
+    "global_score",
+    "files_analyzed",
+    "files_skipped",
+    "total_lines",
+    "total_estimated_tokens",
+    "errors",
+    "version"
+  ],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Finding"
+      }
+    },
+    "global_score": {
+      "$ref": "#/definitions/GlobalScore"
+    },
+    "files_analyzed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "files_skipped": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_lines": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_estimated_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+
+  "definitions": {
+    "Finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "severity",
+        "confidence",
+        "path",
+        "summary",
+        "reasons",
+        "evidence",
+        "suggested_next_step",
+        "estimated_tokens"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "description": "Accepts both PascalCase (Rust serde/Python) and kebab-case (TypeScript) serialization",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "context-bomb", "dead-weight", "reexport-entropy", "coupling-hotspot",
+                "code-duplication", "unused-import", "branch-density", "deep-nesting",
+                "type-complexity", "comment-ratio", "implicit-control", "error-swallow",
+                "dangerous-pattern", "mutable-global", "naming-entropy", "stringly-typed",
+                "import-diversity", "platform-density"
+              ]
+            },
+            {
+              "type": "string",
+              "enum": [
+                "ContextBomb", "DeadWeight", "ReexportEntropy", "CouplingHotspot",
+                "CodeDuplication", "UnusedImport", "BranchDensity", "DeepNesting",
+                "TypeComplexity", "CommentRatio", "ImplicitControl", "ErrorSwallow",
+                "DangerousPattern", "MutableGlobal", "NamingEntropy", "StringlyTyped",
+                "ImportDiversity", "PlatformDensity"
+              ]
+            }
+          ]
+        },
+        "severity": {
+          "description": "Accepts PascalCase (Rust serde/Python) and UPPERCASE (TypeScript)",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+            },
+            {
+              "type": "string",
+              "enum": ["Critical", "High", "Medium", "Low"]
+            }
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "path": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggested_next_step": {
+          "type": "string"
+        },
+        "estimated_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        }
+      }
+    },
+    "GlobalScore": {
+      "type": "object",
+      "required": [
+        "ai_friction_score",
+        "context_waste_score",
+        "structural_entropy_score",
+        "reasoning_complexity_score",
+        "context_waste_ratio",
+        "estimated_waste_pct"
+      ],
+      "properties": {
+        "ai_friction_score": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "context_waste_score": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "structural_entropy_score": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reasoning_complexity_score": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "context_waste_ratio": {
+          "type": "number",
+          "minimum": 0
+        },
+        "estimated_waste_pct": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

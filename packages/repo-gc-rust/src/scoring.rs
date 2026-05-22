@@ -43,6 +43,30 @@ pub fn compute_global_score(findings: &[Finding], total_files: usize, total_esti
         .min(100.0)
         .round() as u32;
 
+    let reasoning_complexity = ((findings
+        .iter()
+        .filter(|f| {
+            matches!(
+                f.kind,
+                FindingKind::BranchDensity
+                    | FindingKind::DeepNesting
+                    | FindingKind::TypeComplexity
+                    | FindingKind::CommentRatio
+                    | FindingKind::ErrorSwallow
+                    | FindingKind::DangerousPattern
+                    | FindingKind::NamingEntropy
+                    | FindingKind::StringlyTyped
+                    | FindingKind::ImportDiversity
+                    | FindingKind::ImplicitControl
+            )
+        })
+        .map(|f| f.severity.weight() * f.confidence)
+        .sum::<f32>()
+        / max_expected)
+        * 100.0)
+        .min(100.0)
+        .round() as u32;
+
     let context_window_tokens = 128_000.0;
     let context_waste_ratio = total_estimated_tokens as f64 / context_window_tokens;
     let estimated_waste_pct = ((total_estimated_tokens as f64
@@ -55,6 +79,7 @@ pub fn compute_global_score(findings: &[Finding], total_files: usize, total_esti
         ai_friction_score: ai_friction,
         context_waste_score: context_waste,
         structural_entropy_score: structural_entropy,
+        reasoning_complexity_score: reasoning_complexity,
         context_waste_ratio,
         estimated_waste_pct,
     }

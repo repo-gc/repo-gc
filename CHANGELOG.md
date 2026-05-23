@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.8 (2026-05-23)
+
+### New Heuristics
+- **10 new code-quality heuristics** across all language backends (TypeScript, Rust, Python):
+  - **god-module** — modules that do too many unrelated things, increasing LLM reasoning burden
+  - **api-violation** — public API surface that breaks encapsulation conventions
+  - **orchestrator** — modules that excessively delegate, making control flow hard to trace
+  - **interface-bloat** — interfaces/protocols with too many members, raising cognitive load
+  - **deep-nesting** — deeply nested control flow that strains LLM context tracking
+  - **magic-number** — unnamed literals that force LLMs to guess semantics
+  - **long-parameter-list** — functions with too many parameters, complicating call-site reasoning
+  - **side-effect** — functions with hidden side effects that mislead AI refactoring
+  - **exception-masking** — caught-and-swallowed errors that hide failure paths from AI analysis
+  - **todo-bomb** — accumulated TODO/FIXME comments signaling deferred decisions
+
+### Architecture
+- **Canonical config**: Centralized heuristic definitions (labels, thresholds, scores) in a single source of truth, eliminating per-plugin duplication
+- **repo-gc-shared removed**: Fully DRY'd the heuristic layer — all 10 new heuristics share one definition across backends
+- Consistent package descriptions and repository URLs across all `repo-gc-*` packages
+
+### Fixes
+- Completed scaffolding for new heuristics — missing labels, thresholds, and scores now wired through
+
 ## 0.2.7 (2026-05-22)
 
 ### Shared Heuristics Layer

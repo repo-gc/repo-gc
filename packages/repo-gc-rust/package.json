@@ -1,6 +1,6 @@
 {
   "name": "repo-gc-rust",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Rust language support for repo-gc — AI-era repository hygiene analyzer for Rust codebases",
   "license": "FSL-1.1-MIT",
   "repository": "https://github.com/repo-gc/repo-gc",

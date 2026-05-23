@@ -93,6 +93,9 @@ export interface Report {
   version: string;
 }
 
+// Re-export for heuristics that import from ../types
+export type { Thresholds } from './threshold';
+
 // Language-agnostic data interfaces for centralized heuristics.
 // Plugins produce these from their language-specific parsers.
 

@@ -149,6 +149,7 @@ function emptyReport(skipped: number, version: string): Report {
       ai_friction_score: 0,
       context_waste_score: 0,
       structural_entropy_score: 0,
+      reasoning_complexity_score: 0,
       context_waste_ratio: 0,
       estimated_waste_pct: 0,
     },

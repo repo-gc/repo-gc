@@ -1,18 +1,31 @@
 import { Finding, FindingKind, Severity, type FileData, type Thresholds } from '../types';
 
+export interface ImplicitControlOptions {
+  /**
+   * Optional predicate that returns true for framework-heavy files
+   * (e.g. NestJS, Angular, dataclass-heavy) that deserve a relaxed
+   * decorator density limit. Kept as an injected callback so the
+   * shared heuristic stays language-agnostic — each plugin defines
+   * what "framework-heavy" means for its ecosystem.
+   */
+  isFrameworkHeavyFile?: (data: FileData) => boolean;
+}
+
+const FRAMEWORK_MULTIPLIER = 1.5;
+
 export function analyzeImplicitControl(
   data: FileData,
   thresholds: Thresholds,
   idCounter: { value: number },
+  options: ImplicitControlOptions = {},
 ): Finding | null {
   const decoratorCount = data.decoratorCount;
   const fnCount = Math.max(data.functionCount, 1);
   const ratio = decoratorCount / fnCount;
 
-  // Framework-aware: NestJS/Angular/dataclass-heavy files get 1.5x threshold
-  const effectiveLimit = isFrameworkHeavyFile(data)
-    ? thresholds.decoratorDensityLimit * 1.5
-    : thresholds.decoratorDensityLimit;
+  const multiplier =
+    options.isFrameworkHeavyFile?.(data) ? FRAMEWORK_MULTIPLIER : 1.0;
+  const effectiveLimit = thresholds.decoratorDensityLimit * multiplier;
 
   if (ratio <= effectiveLimit) return null;
 
@@ -42,18 +55,4 @@ export function analyzeImplicitControl(
     suggested_next_step: '',
     estimated_tokens: undefined,
   };
-}
-
-function isFrameworkHeavyFile(data: FileData): boolean {
-  const frameworkPatterns = [
-    /@nestjs\//, /@angular\//, /@Component/, /@NgModule/,
-    /@Entity/, /@Injectable/, /@Controller/, /@Service/,
-    /@dataclass/, /@pydantic/,
-  ];
-  for (const imp of data.imports) {
-    for (const pat of frameworkPatterns) {
-      if (pat.test(imp)) return true;
-    }
-  }
-  return false;
 }

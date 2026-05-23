@@ -21,6 +21,8 @@ export interface PluginHeuristicOptions {
   compilerNames?: Set<string>;
   configPatterns?: RegExp[];
   testNamePatterns?: string[];
+  /** Optional predicate for framework-heavy files that deserve a relaxed decorator density limit. */
+  isFrameworkHeavyFile?: (data: FileData) => boolean;
 }
 
 export interface HeuristicsResult {
@@ -131,7 +133,9 @@ export function runHeuristics(
     }
 
     try {
-      const ic = analyzeImplicitControl(fd, thresholds, idCounter);
+      const ic = analyzeImplicitControl(fd, thresholds, idCounter, {
+        isFrameworkHeavyFile: options.isFrameworkHeavyFile,
+      });
       if (ic) findings.push(ic);
     } catch (e) {
       errors.push(`${fd.relativePath}: implicit-control: ${e instanceof Error ? e.message : String(e)}`);

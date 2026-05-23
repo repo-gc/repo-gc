@@ -19,5 +19,6 @@ export { analyzePlatformDensity } from './platform-density';
 export { analyzeNamingEntropy } from './naming-entropy';
 export { analyzeTypeComplexity } from './type-complexity';
 export { analyzeImplicitControl } from './implicit-control';
+export type { ImplicitControlOptions } from './implicit-control';
 export { runHeuristics } from './run-heuristics';
 export type { PluginHeuristicOptions, HeuristicsResult } from './run-heuristics';

@@ -1,4 +1,4 @@
-import type { LanguagePlugin, AnalysisResult, SourceFile, Thresholds } from 'repo-gc';
+import type { LanguagePlugin, AnalysisResult, SourceFile, Thresholds, FileData } from 'repo-gc';
 import { runHeuristics } from 'repo-gc';
 import { parseAllFiles } from './parser';
 import { ImportGraph } from './graph';
@@ -17,6 +17,23 @@ const CONFIG_PATTERNS = [
 
 // Names commonly referenced by compile-time transforms rather than user code
 const COMPILER_NAMES = new Set(['React', 'Fragment', 'jsx', 'jsxs']);
+
+// Framework patterns that indicate files where high decorator/annotation density
+// is idiomatic rather than problematic (e.g. NestJS controllers, Angular components,
+// Python dataclass-heavy modules). These files get a relaxed threshold.
+function isFrameworkHeavyFile(data: FileData): boolean {
+  const patterns = [
+    /@nestjs\//, /@angular\//, /@Component/, /@NgModule/,
+    /@Entity/, /@Injectable/, /@Controller/, /@Service/,
+    /@dataclass/, /@pydantic/,
+  ];
+  for (const imp of data.imports) {
+    for (const pat of patterns) {
+      if (pat.test(imp)) return true;
+    }
+  }
+  return false;
+}
 
 function toInternalFile(f: SourceFile): InternalSourceFile {
   return {
@@ -78,6 +95,7 @@ export const typescriptPlugin: LanguagePlugin = {
       compilerNames: COMPILER_NAMES,
       configPatterns: CONFIG_PATTERNS,
       testNamePatterns: ['for_test', 'forTest'],
+      isFrameworkHeavyFile,
     });
 
     return { findings: hr.findings, skipped: skippedCount, errors: [...errors, ...hr.errors] };

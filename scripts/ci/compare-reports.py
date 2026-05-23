@@ -24,59 +24,53 @@ from collections import defaultdict
 from pathlib import Path
 
 
-# Mapping of all possible serialized kind values to canonical kebab-case
-KIND_NORMALIZE = {
-    # Rust serde PascalCase
-    "ContextBomb": "context-bomb",
-    "DeadWeight": "dead-weight",
-    "ReexportEntropy": "reexport-entropy",
-    "CouplingHotspot": "coupling-hotspot",
-    "CodeDuplication": "code-duplication",
-    "UnusedImport": "unused-import",
-    "BranchDensity": "branch-density",
-    "DeepNesting": "deep-nesting",
-    "TypeComplexity": "type-complexity",
-    "CommentRatio": "comment-ratio",
-    "ImplicitControl": "implicit-control",
-    "ErrorSwallow": "error-swallow",
-    "DangerousPattern": "dangerous-pattern",
-    "MutableGlobal": "mutable-global",
-    "NamingEntropy": "naming-entropy",
-    "StringlyTyped": "stringly-typed",
-    "ImportDiversity": "import-diversity",
-    "PlatformDensity": "platform-density",
-    # TypeScript string enum values (already kebab-case)
-    "context-bomb": "context-bomb",
-    "dead-weight": "dead-weight",
-    "reexport-entropy": "reexport-entropy",
-    "coupling-hotspot": "coupling-hotspot",
-    "code-duplication": "code-duplication",
-    "unused-import": "unused-import",
-    "branch-density": "branch-density",
-    "deep-nesting": "deep-nesting",
-    "type-complexity": "type-complexity",
-    "comment-ratio": "comment-ratio",
-    "implicit-control": "implicit-control",
-    "error-swallow": "error-swallow",
-    "dangerous-pattern": "dangerous-pattern",
-    "mutable-global": "mutable-global",
-    "naming-entropy": "naming-entropy",
-    "stringly-typed": "stringly-typed",
-    "import-diversity": "import-diversity",
-    "platform-density": "platform-density",
-}
+_CANONICAL: dict | None = None
 
-# Mapping of severity serializations to canonical UPPERCASE
-SEVERITY_NORMALIZE = {
-    "Critical": "CRITICAL",
-    "High": "HIGH",
-    "Medium": "MEDIUM",
-    "Low": "LOW",
-    "CRITICAL": "CRITICAL",
-    "HIGH": "HIGH",
-    "MEDIUM": "MEDIUM",
-    "LOW": "LOW",
-}
+
+def _load_canonical() -> dict:
+    """Load the canonical finding kinds JSON from the repo root."""
+    global _CANONICAL
+    if _CANONICAL is None:
+        path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "test-fixtures"
+            / "finding-kinds.json"
+        )
+        with open(path) as f:
+            _CANONICAL = json.load(f)
+    return _CANONICAL
+
+
+def _build_kind_normalize() -> dict[str, str]:
+    """Build kind normalization map from canonical JSON.
+
+    Maps both PascalCase (Rust serde/Python) and kebab-case (TypeScript)
+    serializations to canonical kebab-case labels.
+    """
+    canonical = _load_canonical()
+    mapping: dict[str, str] = {}
+    for k in canonical["finding_kinds"]:
+        mapping[k["id"]] = k["label"]
+        mapping[k["label"]] = k["label"]
+    return mapping
+
+
+def _build_severity_normalize() -> dict[str, str]:
+    """Build severity normalization map from canonical JSON.
+
+    Maps both PascalCase (Rust serde/Python) and UPPERCASE (TypeScript)
+    serializations to canonical UPPERCASE labels.
+    """
+    canonical = _load_canonical()
+    mapping: dict[str, str] = {}
+    for s in canonical["severities"]:
+        mapping[s["id"]] = s["label"]
+        mapping[s["label"]] = s["label"]
+    return mapping
+
+
+KIND_NORMALIZE = _build_kind_normalize()
+SEVERITY_NORMALIZE = _build_severity_normalize()
 
 
 def normalize_kind(raw: str) -> str:

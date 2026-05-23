@@ -14,8 +14,6 @@ export { analyzeDeepNesting } from './deep-nesting';
 export { analyzeDangerousPattern } from './dangerous-pattern';
 export { analyzeCommentRatio } from './comment-ratio';
 export { analyzeStringlyTyped } from './stringly-typed';
-export { analyzeMutableGlobal } from './mutable-global';
-export { analyzePlatformDensity } from './platform-density';
 export { analyzeNamingEntropy } from './naming-entropy';
 export { analyzeTypeComplexity } from './type-complexity';
 export { analyzeImplicitControl } from './implicit-control';

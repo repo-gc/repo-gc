@@ -13,6 +13,42 @@ from pathlib import Path
 from typing import Optional
 
 
+_CANONICAL: dict | None = None
+
+
+def _load_canonical() -> dict:
+    """Load the canonical finding kinds JSON (single source of truth).
+
+    The file lives at the repo root under test-fixtures/finding-kinds.json.
+    """
+    global _CANONICAL
+    if _CANONICAL is None:
+        path = (
+            Path(__file__).resolve().parent.parent.parent.parent.parent
+            / "test-fixtures"
+            / "finding-kinds.json"
+        )
+        with open(path) as f:
+            _CANONICAL = json.load(f)
+    return _CANONICAL
+
+
+def _severity_data(severity_id: str) -> dict:
+    """Look up a severity entry by its PascalCase id from the canonical JSON."""
+    for s in _load_canonical()["severities"]:
+        if s["id"] == severity_id:
+            return s
+    return {}
+
+
+def _kind_data(kind_id: str) -> dict:
+    """Look up a finding kind entry by its PascalCase id from the canonical JSON."""
+    for k in _load_canonical()["finding_kinds"]:
+        if k["id"] == kind_id:
+            return k
+    return {}
+
+
 class Severity(Enum):
     Critical = "Critical"
     High = "High"
@@ -21,15 +57,15 @@ class Severity(Enum):
 
     @property
     def weight(self) -> float:
-        return {Severity.Critical: 4.0, Severity.High: 2.0, Severity.Medium: 1.0, Severity.Low: 0.5}[self]
+        return _severity_data(self.value).get("weight", 1.0)
 
     @property
     def label(self) -> str:
-        return {Severity.Critical: "CRITICAL", Severity.High: "HIGH", Severity.Medium: "MEDIUM", Severity.Low: "LOW"}[self]
+        return _severity_data(self.value).get("label", self.value.upper())
 
     @property
     def llm_label(self) -> str:
-        return {Severity.Critical: "C", Severity.High: "H", Severity.Medium: "M", Severity.Low: "L"}[self]
+        return _severity_data(self.value).get("llm_label", self.value[0])
 
 
 class FindingKind(Enum):
@@ -46,59 +82,22 @@ class FindingKind(Enum):
     ImplicitControl = "ImplicitControl"
     ErrorSwallow = "ErrorSwallow"
     DangerousPattern = "DangerousPattern"
-    MutableGlobal = "MutableGlobal"
     NamingEntropy = "NamingEntropy"
     StringlyTyped = "StringlyTyped"
     ImportDiversity = "ImportDiversity"
-    PlatformDensity = "PlatformDensity"
 
     @property
     def label(self) -> str:
-        _map = {
-            FindingKind.ContextBomb: "context-bomb",
-            FindingKind.DeadWeight: "dead-weight",
-            FindingKind.ReexportEntropy: "reexport-entropy",
-            FindingKind.CouplingHotspot: "coupling-hotspot",
-            FindingKind.CodeDuplication: "code-duplication",
-            FindingKind.UnusedImport: "unused-import",
-            FindingKind.BranchDensity: "branch-density",
-            FindingKind.DeepNesting: "deep-nesting",
-            FindingKind.TypeComplexity: "type-complexity",
-            FindingKind.CommentRatio: "comment-ratio",
-            FindingKind.ImplicitControl: "implicit-control",
-            FindingKind.ErrorSwallow: "error-swallow",
-            FindingKind.DangerousPattern: "dangerous-pattern",
-            FindingKind.MutableGlobal: "mutable-global",
-            FindingKind.NamingEntropy: "naming-entropy",
-            FindingKind.StringlyTyped: "stringly-typed",
-            FindingKind.ImportDiversity: "import-diversity",
-            FindingKind.PlatformDensity: "platform-density",
-        }
-        return _map[self]
+        return _kind_data(self.value).get("label", self.value.lower())
 
     @property
     def llm_label(self) -> str:
-        _map = {
-            FindingKind.ContextBomb: "OVS",
-            FindingKind.DeadWeight: "DEAD",
-            FindingKind.ReexportEntropy: "EXP",
-            FindingKind.CouplingHotspot: "COUP",
-            FindingKind.CodeDuplication: "DUP",
-            FindingKind.UnusedImport: "ZOMB",
-            FindingKind.BranchDensity: "BRAN",
-            FindingKind.DeepNesting: "NEST",
-            FindingKind.TypeComplexity: "TYPE",
-            FindingKind.CommentRatio: "CMNT",
-            FindingKind.ImplicitControl: "HIDE",
-            FindingKind.ErrorSwallow: "SWAL",
-            FindingKind.DangerousPattern: "DANG",
-            FindingKind.MutableGlobal: "GLOB",
-            FindingKind.NamingEntropy: "MIXD",
-            FindingKind.StringlyTyped: "STRY",
-            FindingKind.ImportDiversity: "GODF",
-            FindingKind.PlatformDensity: "PLAT",
-        }
-        return _map[self]
+        return _kind_data(self.value).get("llm_code", "")
+
+    @property
+    def category(self) -> str:
+        """Return the scoring category (e.g. 'context_waste', 'structural_entropy', 'reasoning_complexity')."""
+        return _kind_data(self.value).get("category", "")
 
 
 @dataclass

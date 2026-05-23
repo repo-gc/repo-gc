@@ -1,7 +1,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 /// 4 bytes ≈ 1 token (LLM tokenizer heuristic).
 pub fn estimate_tokens(size_bytes: u64) -> usize {
@@ -41,25 +41,22 @@ pub fn analyze(
         evidence.push(format!("impl_block_count: {}", structure.impl_block_count));
     }
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("cb-{:03}", counter),
-        kind: FindingKind::ContextBomb,
+    let mut finding = Finding::new(
+        next_finding_id("cb", counter),
+        FindingKind::ContextBomb,
         severity,
-        confidence: if file.line_count >= limit * 4 {
+        if file.line_count >= limit * 4 {
             0.95
         } else if file.line_count >= limit * 2 {
             0.85
         } else {
             0.75
         },
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
+        file.relative_path.clone(),
         evidence,
-        suggested_next_step: String::new(),
-        estimated_tokens: Some(estimated_tokens),
-    })
+    );
+    finding.estimated_tokens = Some(estimated_tokens);
+    Some(finding)
 }
 
 #[cfg(test)]

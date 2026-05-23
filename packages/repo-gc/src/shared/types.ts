@@ -1,6 +1,8 @@
 // Schema types — shared across all repo-gc analyzer packages.
 // Mirrors Rust's types.rs for JSON/LLM-TSV schema compatibility.
 
+import canonical from '../../../../test-fixtures/finding-kinds.json' with { type: 'json' };
+
 export enum Severity {
   Critical = 'CRITICAL',
   High = 'HIGH',
@@ -8,19 +10,13 @@ export enum Severity {
   Low = 'LOW',
 }
 
-export const SEVERITY_WEIGHT: Record<Severity, number> = {
-  [Severity.Critical]: 4.0,
-  [Severity.High]: 2.0,
-  [Severity.Medium]: 1.0,
-  [Severity.Low]: 0.5,
-};
+export const SEVERITY_WEIGHT: Record<Severity, number> = Object.fromEntries(
+  canonical.severities.map(s => [s.label as Severity, s.weight])
+) as Record<Severity, number>;
 
-export const SEVERITY_LLM: Record<Severity, string> = {
-  [Severity.Critical]: 'C',
-  [Severity.High]: 'H',
-  [Severity.Medium]: 'M',
-  [Severity.Low]: 'L',
-};
+export const SEVERITY_LLM: Record<Severity, string> = Object.fromEntries(
+  canonical.severities.map(s => [s.label as Severity, s.llm_label])
+) as Record<Severity, string>;
 
 export enum FindingKind {
   ContextBomb = 'context-bomb',
@@ -41,24 +37,13 @@ export enum FindingKind {
   ImportDiversity = 'import-diversity',
 }
 
-export const FINDING_KIND_LLM: Record<FindingKind, string> = {
-  [FindingKind.ContextBomb]: 'OVS',
-  [FindingKind.DeadWeight]: 'DEAD',
-  [FindingKind.ReexportEntropy]: 'EXP',
-  [FindingKind.CouplingHotspot]: 'COUP',
-  [FindingKind.CodeDuplication]: 'DUP',
-  [FindingKind.UnusedImport]: 'ZOMB',
-  [FindingKind.BranchDensity]: 'BRAN',
-  [FindingKind.DeepNesting]: 'NEST',
-  [FindingKind.TypeComplexity]: 'TYPE',
-  [FindingKind.CommentRatio]: 'CMNT',
-  [FindingKind.ImplicitControl]: 'HIDE',
-  [FindingKind.ErrorSwallow]: 'SWAL',
-  [FindingKind.DangerousPattern]: 'DANG',
-  [FindingKind.NamingEntropy]: 'MIXD',
-  [FindingKind.StringlyTyped]: 'STRY',
-  [FindingKind.ImportDiversity]: 'GODF',
-};
+export const FINDING_KIND_LLM: Record<FindingKind, string> = Object.fromEntries(
+  canonical.finding_kinds.map(k => [k.label as FindingKind, k.llm_code])
+) as Record<FindingKind, string>;
+
+export const FINDING_KIND_CATEGORY: Record<FindingKind, string> = Object.fromEntries(
+  canonical.finding_kinds.map(k => [k.label as FindingKind, k.category])
+) as Record<FindingKind, string>;
 
 export interface Finding {
   id: string;

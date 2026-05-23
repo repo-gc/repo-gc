@@ -6,8 +6,9 @@
 
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
+use crate::heuristics::common::severity_scale_offset;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind};
 
 pub fn analyze(
     file: &RustFile,
@@ -21,36 +22,25 @@ pub fn analyze(
     }
 
     let depth = structure.max_nesting_depth;
-    let severity = if depth >= limit + 4 {
-        Severity::Critical
-    } else if depth >= limit + 2 {
-        Severity::High
-    } else {
-        Severity::Medium
-    };
+    let severity = severity_scale_offset(depth, limit, 2, 4);
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("dn-{:03}", counter),
-        kind: FindingKind::DeepNesting,
+    Some(Finding::new(
+        next_finding_id("dn", counter),
+        FindingKind::DeepNesting,
         severity,
-        confidence: 0.85,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.85,
+        file.relative_path.clone(),
+        vec![
             format!("max_depth: {}", depth),
             format!("limit: {}", limit),
-            "deepest_at: unknown".into(),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::Severity;
     use std::path::PathBuf;
 
     fn f() -> RustFile {
@@ -102,6 +92,19 @@ mod tests {
     }
 
     #[test]
+    fn no_finding_at_strict_limit() {
+        // Strict limit=4, depth=4 → no finding
+        assert!(analyze(&f(), &s(4), &Threshold::Strict, &mut 0).is_none());
+    }
+
+    #[test]
+    fn finding_at_relaxed_limit_plus_one() {
+        // Relaxed limit=8, depth=9 → Medium
+        let r = analyze(&f(), &s(9), &Threshold::Relaxed, &mut 0).unwrap();
+        assert_eq!(r.severity, Severity::Medium);
+    }
+
+    #[test]
     fn counter_increments() {
         let mut c = 0;
         analyze(&f(), &s(7), &Threshold::Normal, &mut c);
@@ -114,6 +117,5 @@ mod tests {
         let r = analyze(&f(), &s(7), &Threshold::Normal, &mut 0).unwrap();
         assert!(r.evidence.iter().any(|e| e.starts_with("max_depth: 7")));
         assert!(r.evidence.iter().any(|e| e.starts_with("limit: 6")));
-        assert!(r.evidence.iter().any(|e| e.starts_with("deepest_at:")));
     }
 }

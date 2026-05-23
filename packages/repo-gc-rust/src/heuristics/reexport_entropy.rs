@@ -1,7 +1,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 pub fn analyze(
     file: &RustFile,
@@ -26,23 +26,18 @@ pub fn analyze(
         Severity::Low
     };
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("re-{:03}", counter),
-        kind: FindingKind::ReexportEntropy,
+    Some(Finding::new(
+        next_finding_id("re", counter),
+        FindingKind::ReexportEntropy,
         severity,
-        confidence: 0.8,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.8,
+        file.relative_path.clone(),
+        vec![
             format!("reexport_count: {}", pub_use_count),
             format!("total_items: {}", total_items),
             format!("has_wildcard: {}", has_wildcard),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]

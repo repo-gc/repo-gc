@@ -6,8 +6,9 @@
 
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
+use crate::heuristics::common::severity_scale_offset;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind};
 
 pub fn analyze(
     file: &RustFile,
@@ -21,36 +22,25 @@ pub fn analyze(
     }
 
     let depth = structure.max_type_depth;
-    let severity = if depth >= limit + 3 {
-        Severity::Critical
-    } else if depth >= limit + 2 {
-        Severity::High
-    } else {
-        Severity::Medium
-    };
+    let severity = severity_scale_offset(depth, limit, 2, 3);
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("tc-{:03}", counter),
-        kind: FindingKind::TypeComplexity,
+    Some(Finding::new(
+        next_finding_id("tc", counter),
+        FindingKind::TypeComplexity,
         severity,
-        confidence: 0.50,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.50,
+        file.relative_path.clone(),
+        vec![
             format!("max_type_depth: {}", depth),
             format!("limit: {}", limit),
-            "location: unknown".into(),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::Severity;
     use std::path::PathBuf;
 
     fn f() -> RustFile {
@@ -98,6 +88,14 @@ mod tests {
     fn id_uses_tc_prefix() {
         let r = analyze(&f(), &s(5), &Threshold::Normal, &mut 0).unwrap();
         assert!(r.id.starts_with("tc-"));
+    }
+
+    #[test]
+    fn counter_increments() {
+        let mut c = 0;
+        analyze(&f(), &s(5), &Threshold::Normal, &mut c);
+        analyze(&f(), &s(5), &Threshold::Normal, &mut c);
+        assert_eq!(c, 2);
     }
 
     #[test]

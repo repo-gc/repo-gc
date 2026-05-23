@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 use syn::fold::Fold;
 
 /// Minimum normalized token length to consider a body worth comparing.
 const MIN_BODY_LEN: usize = 40;
 
-pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> Vec<Finding> {
+pub fn analyze_duplicates(structures: &[&FileStructure], counter: &mut usize) -> Vec<Finding> {
     let mut body_map: HashMap<String, Vec<(String, String)>> = HashMap::new();
 
     for s in structures {
@@ -48,7 +48,6 @@ pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> 
             Severity::Low
         };
 
-        *counter += 1;
         let files_list: Vec<String> = locations
             .iter()
             .take(5)
@@ -56,22 +55,18 @@ pub fn analyze_duplicates(structures: &[FileStructure], counter: &mut usize) -> 
             .collect();
 
         let primary_path = std::path::PathBuf::from(&locations[0].0);
-        findings.push(Finding {
-            id: format!("dup-{:03}", counter),
-            kind: FindingKind::CodeDuplication,
+        findings.push(Finding::new(
+            next_finding_id("dup", counter),
+            FindingKind::CodeDuplication,
             severity,
-            confidence: 0.85,
-            path: primary_path,
-            summary: String::new(),
-            reasons: vec![],
-            evidence: vec![
+            0.85,
+            primary_path,
+            vec![
                 format!("file_count: {}", file_count),
                 format!("fn_name: {}", locations[0].1),
                 format!("files: {}", files_list.join(", ")),
             ],
-            suggested_next_step: String::new(),
-            estimated_tokens: None,
-        });
+        ));
     }
 
     findings.sort_by(|a, b| b.severity.weight().partial_cmp(&a.severity.weight()).unwrap());
@@ -145,7 +140,7 @@ mod tests {
             mks("src/a.rs", "foo", "{ let x = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 ; x }"),
             mks("src/b.rs", "bar", "{ let y = 1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 ; y }"),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
     #[test]
@@ -155,7 +150,7 @@ mod tests {
             mks("src/a.rs", "compute", body),
             mks("src/b.rs", "compute", body),
         ];
-        let findings = analyze_duplicates(&s, &mut 0);
+        let findings = analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].kind, FindingKind::CodeDuplication);
     }
@@ -167,7 +162,7 @@ mod tests {
             mks("src/a.rs", "foo", body),
             mks("src/a.rs", "bar", body),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
     #[test]
@@ -176,7 +171,7 @@ mod tests {
             mks("src/a.rs", "new", "{ Self { } }"),
             mks("src/b.rs", "new", "{ Self { } }"),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
     #[test]
@@ -185,7 +180,7 @@ mod tests {
         let s: Vec<_> = (0..5)
             .map(|i| mks(&format!("src/file{i}.rs"), "work", body))
             .collect();
-        let findings = analyze_duplicates(&s, &mut 0);
+        let findings = analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0);
         assert_eq!(findings[0].severity, Severity::High);
     }
 
@@ -201,7 +196,7 @@ mod tests {
             mks("src/a.rs", "compute", body),
             mks("src/b.rs", "compute", body),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
     #[test]
@@ -211,7 +206,7 @@ mod tests {
             mks("src/a.rs", "encode_for_test", body),
             mks("src/b.rs", "encode_for_test", body),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
     #[test]
@@ -223,7 +218,7 @@ mod tests {
             mks("src/a.rs", "compute", body1),
             mks("src/b.rs", "compute", body2),
         ];
-        let findings = analyze_duplicates(&s, &mut 0);
+        let findings = analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0);
         assert_eq!(findings.len(), 1);
     }
 
@@ -235,7 +230,7 @@ mod tests {
             mks("src/a.rs", "calc", body1),
             mks("src/b.rs", "calc", body2),
         ];
-        let findings = analyze_duplicates(&s, &mut 0);
+        let findings = analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0);
         assert_eq!(findings.len(), 1);
     }
 
@@ -248,7 +243,7 @@ mod tests {
             mks("src/a.rs", "add", body1),
             mks("src/b.rs", "mul", body2),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
     #[test]
@@ -259,7 +254,7 @@ mod tests {
             mks("src/a.rs", "compute", body),
             mks("src/b.rs", "compute", body),
         ];
-        let findings = analyze_duplicates(&s, &mut 0);
+        let findings = analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0);
         assert_eq!(findings.len(), 1);
     }
 
@@ -269,7 +264,7 @@ mod tests {
             mks("src/a.rs", "empty", "{ }"),
             mks("src/b.rs", "empty", "{ }"),
         ];
-        assert!(analyze_duplicates(&s, &mut 0).is_empty());
+        assert!(analyze_duplicates(&s.iter().collect::<Vec<_>>(),&mut 0).is_empty());
     }
 
 }

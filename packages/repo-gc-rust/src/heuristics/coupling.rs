@@ -1,7 +1,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::graph::ImportGraph;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 pub fn analyze(
     file: &RustFile,
@@ -51,24 +51,19 @@ pub fn analyze(
             (false, false) => unreachable!(),
         };
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("ch-{:03}", counter),
-        kind: FindingKind::CouplingHotspot,
+    Some(Finding::new(
+        next_finding_id("ch", counter),
+        FindingKind::CouplingHotspot,
         severity,
         confidence,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        file.relative_path.clone(),
+        vec![
             format!("fan_in: {}", fan_in),
             format!("fan_out: {}", fan_out),
             format!("instability: {:.3}", i),
             format!("pattern: {}", pattern_label),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]

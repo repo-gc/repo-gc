@@ -4,6 +4,7 @@ export {
   SEVERITY_LLM,
   FindingKind,
   FINDING_KIND_LLM,
+  FINDING_KIND_CATEGORY,
 } from './types';
 export type {
   Finding,

@@ -8,7 +8,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 pub fn analyze(
     file: &RustFile,
@@ -29,23 +29,18 @@ pub fn analyze(
         Severity::Low
     };
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("es-{:03}", counter),
-        kind: FindingKind::ErrorSwallow,
+    Some(Finding::new(
+        next_finding_id("es", counter),
+        FindingKind::ErrorSwallow,
         severity,
-        confidence: 0.4, // Lower: syn has no type resolution
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.4, // Lower: syn has no type resolution
+        file.relative_path.clone(),
+        vec![
             format!("empty_catch_count: {}", structure.empty_catch_count),
             format!("limit: {}", limit),
             format!("preview: {}", file.relative_path.display()),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]

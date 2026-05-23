@@ -9,8 +9,9 @@
 
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
+use crate::heuristics::common::severity_scale;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind};
 
 pub fn analyze(
     file: &RustFile,
@@ -23,36 +24,26 @@ pub fn analyze(
         return None;
     }
 
-    let severity = if structure.dangerous_pattern_count >= limit * 3 {
-        Severity::Critical
-    } else if structure.dangerous_pattern_count >= limit * 2 {
-        Severity::High
-    } else {
-        Severity::Medium
-    };
+    let severity = severity_scale(structure.dangerous_pattern_count as f64, limit as f64);
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("dp-{:03}", counter),
-        kind: FindingKind::DangerousPattern,
+    Some(Finding::new(
+        next_finding_id("dp", counter),
+        FindingKind::DangerousPattern,
         severity,
-        confidence: 0.60, // Lower: Rust has legitimate uses for unsafe/unwrap
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.60, // Lower: Rust has legitimate uses for unsafe/unwrap
+        file.relative_path.clone(),
+        vec![
             format!("dangerous_pattern_count: {}", structure.dangerous_pattern_count),
             format!("limit: {}", limit),
             format!("preview: {}", file.relative_path.display()),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::Severity;
     use std::path::PathBuf;
 
     fn f(name: &str) -> RustFile {

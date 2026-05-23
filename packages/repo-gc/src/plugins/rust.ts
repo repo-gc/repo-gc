@@ -5,6 +5,7 @@ import { existsSync, chmodSync } from 'node:fs';
 import type { LanguagePlugin, AnalysisResult, SourceFile } from '../shared/plugin';
 import { FindingKind, Severity, runtimeNotFound, processExited, outputParseFailed, spawnFailed } from '../shared/index';
 import type { Finding, Thresholds } from '../shared/types';
+import canonical from '../../../../test-fixtures/finding-kinds.json' with { type: 'json' };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -26,24 +27,13 @@ function findBinary(): string | null {
   return null;
 }
 
-const RUST_KIND_MAP: Record<string, FindingKind> = {
-  ContextBomb: FindingKind.ContextBomb,
-  DeadWeight: FindingKind.DeadWeight,
-  ReexportEntropy: FindingKind.ReexportEntropy,
-  CouplingHotspot: FindingKind.CouplingHotspot,
-  CodeDuplication: FindingKind.CodeDuplication,
-  UnusedImport: FindingKind.UnusedImport,
-  NamingEntropy: FindingKind.NamingEntropy,
-  TypeComplexity: FindingKind.TypeComplexity,
-  ImplicitControl: FindingKind.ImplicitControl,
-};
+const RUST_KIND_MAP: Record<string, FindingKind> = Object.fromEntries(
+  canonical.finding_kinds.map(k => [k.id, k.label as FindingKind])
+);
 
-const RUST_SEVERITY_MAP: Record<string, Severity> = {
-  Critical: Severity.Critical,
-  High: Severity.High,
-  Medium: Severity.Medium,
-  Low: Severity.Low,
-};
+const RUST_SEVERITY_MAP: Record<string, Severity> = Object.fromEntries(
+  canonical.severities.map(s => [s.id, s.label as Severity])
+);
 
 function normalizeFindings(raw: unknown[]): Finding[] {
   return raw.map((f: any, i: number) => ({

@@ -11,27 +11,25 @@ pub enum Severity {
 
 impl Severity {
     pub fn weight(&self) -> f32 {
-        match self {
-            Severity::Critical => 4.0,
-            Severity::High => 2.0,
-            Severity::Medium => 1.0,
-            Severity::Low => 0.5,
-        }
+        crate::canonical::severity_weight(&format!("{:?}", self)) as f32
     }
     pub fn label(&self) -> &'static str {
-        match self {
-            Severity::Critical => "CRITICAL",
-            Severity::High => "HIGH",
-            Severity::Medium => "MEDIUM",
-            Severity::Low => "LOW",
-        }
+        crate::canonical::severity_label(&format!("{:?}", self))
     }
     pub fn llm_label(&self) -> &'static str {
-        match self {
-            Severity::Critical => "C",
-            Severity::High => "H",
-            Severity::Medium => "M",
-            Severity::Low => "L",
+        crate::canonical::severity_llm_label(&format!("{:?}", self))
+    }
+}
+
+impl std::str::FromStr for Severity {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Critical" => Ok(Severity::Critical),
+            "High" => Ok(Severity::High),
+            "Medium" => Ok(Severity::Medium),
+            "Low" => Ok(Severity::Low),
+            _ => Err(format!("unknown Severity variant: {s}")),
         }
     }
 }
@@ -58,44 +56,35 @@ pub enum FindingKind {
 
 impl FindingKind {
     pub fn label(&self) -> &'static str {
-        match self {
-            FindingKind::ContextBomb => "context-bomb",
-            FindingKind::DeadWeight => "dead-weight",
-            FindingKind::ReexportEntropy => "reexport-entropy",
-            FindingKind::CouplingHotspot => "coupling-hotspot",
-            FindingKind::CodeDuplication => "code-duplication",
-            FindingKind::UnusedImport => "unused-import",
-            FindingKind::BranchDensity => "branch-density",
-            FindingKind::DeepNesting => "deep-nesting",
-            FindingKind::TypeComplexity => "type-complexity",
-            FindingKind::CommentRatio => "comment-ratio",
-            FindingKind::ImplicitControl => "implicit-control",
-            FindingKind::ErrorSwallow => "error-swallow",
-            FindingKind::DangerousPattern => "dangerous-pattern",
-            FindingKind::NamingEntropy => "naming-entropy",
-            FindingKind::StringlyTyped => "stringly-typed",
-            FindingKind::ImportDiversity => "import-diversity",
-        }
+        crate::canonical::kind_label(&format!("{:?}", self))
     }
     /// Short code for LLM/token-efficient output
     pub fn llm_label(&self) -> &'static str {
-        match self {
-            FindingKind::ContextBomb => "OVS",
-            FindingKind::DeadWeight => "DEAD",
-            FindingKind::ReexportEntropy => "EXP",
-            FindingKind::CouplingHotspot => "COUP",
-            FindingKind::CodeDuplication => "DUP",
-            FindingKind::UnusedImport => "ZOMB",
-            FindingKind::BranchDensity => "BRAN",
-            FindingKind::DeepNesting => "NEST",
-            FindingKind::TypeComplexity => "TYPE",
-            FindingKind::CommentRatio => "CMNT",
-            FindingKind::ImplicitControl => "HIDE",
-            FindingKind::ErrorSwallow => "SWAL",
-            FindingKind::DangerousPattern => "DANG",
-            FindingKind::NamingEntropy => "MIXD",
-            FindingKind::StringlyTyped => "STRY",
-            FindingKind::ImportDiversity => "GODF",
+        crate::canonical::kind_llm_code(&format!("{:?}", self))
+    }
+}
+
+impl std::str::FromStr for FindingKind {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ContextBomb" => Ok(FindingKind::ContextBomb),
+            "DeadWeight" => Ok(FindingKind::DeadWeight),
+            "ReexportEntropy" => Ok(FindingKind::ReexportEntropy),
+            "CouplingHotspot" => Ok(FindingKind::CouplingHotspot),
+            "CodeDuplication" => Ok(FindingKind::CodeDuplication),
+            "UnusedImport" => Ok(FindingKind::UnusedImport),
+            "BranchDensity" => Ok(FindingKind::BranchDensity),
+            "DeepNesting" => Ok(FindingKind::DeepNesting),
+            "TypeComplexity" => Ok(FindingKind::TypeComplexity),
+            "CommentRatio" => Ok(FindingKind::CommentRatio),
+            "ImplicitControl" => Ok(FindingKind::ImplicitControl),
+            "ErrorSwallow" => Ok(FindingKind::ErrorSwallow),
+            "DangerousPattern" => Ok(FindingKind::DangerousPattern),
+            "NamingEntropy" => Ok(FindingKind::NamingEntropy),
+            "StringlyTyped" => Ok(FindingKind::StringlyTyped),
+            "ImportDiversity" => Ok(FindingKind::ImportDiversity),
+            _ => Err(format!("unknown FindingKind variant: {s}")),
         }
     }
 }
@@ -114,6 +103,37 @@ pub struct Finding {
     pub estimated_tokens: Option<usize>,
 }
 
+impl Finding {
+    pub fn new(
+        id: String,
+        kind: FindingKind,
+        severity: Severity,
+        confidence: f32,
+        path: PathBuf,
+        evidence: Vec<String>,
+    ) -> Self {
+        Finding {
+            id,
+            kind,
+            severity,
+            confidence,
+            path,
+            summary: String::new(),
+            reasons: vec![],
+            suggested_next_step: String::new(),
+            estimated_tokens: None,
+            evidence,
+        }
+    }
+}
+
+/// Returns the next finding ID with the given prefix, incrementing the counter.
+/// Every heuristic uses `XX-{:03}` format, so this is the single source of truth.
+pub fn next_finding_id(prefix: &str, counter: &mut usize) -> String {
+    *counter += 1;
+    format!("{}-{:03}", prefix, counter)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalScore {
     pub ai_friction_score: u32,
@@ -122,6 +142,19 @@ pub struct GlobalScore {
     pub reasoning_complexity_score: u32,
     pub context_waste_ratio: f64,
     pub estimated_waste_pct: u32,
+}
+
+impl Default for GlobalScore {
+    fn default() -> Self {
+        GlobalScore {
+            ai_friction_score: 0,
+            context_waste_score: 0,
+            structural_entropy_score: 0,
+            reasoning_complexity_score: 0,
+            context_waste_ratio: 0.0,
+            estimated_waste_pct: 0,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -139,6 +172,22 @@ pub struct Report {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn canonical_json_matches_enum_variants() {
+        for &id in crate::canonical::kind_ids() {
+            assert!(
+                id.parse::<FindingKind>().is_ok(),
+                "unknown FindingKind variant: {id}",
+            );
+        }
+        for &id in crate::canonical::severity_ids() {
+            assert!(
+                id.parse::<Severity>().is_ok(),
+                "unknown Severity variant: {id}",
+            );
+        }
+    }
 
     #[test]
     fn severity_weights_are_ordered() {

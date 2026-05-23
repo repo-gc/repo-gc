@@ -72,29 +72,9 @@
           "type": "string"
         },
         "kind": {
-          "description": "Accepts both PascalCase (Rust serde/Python) and kebab-case (TypeScript) serialization",
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": [
-                "context-bomb", "dead-weight", "reexport-entropy", "coupling-hotspot",
-                "code-duplication", "unused-import", "branch-density", "deep-nesting",
-                "type-complexity", "comment-ratio", "implicit-control", "error-swallow",
-                "dangerous-pattern", "mutable-global", "naming-entropy", "stringly-typed",
-                "import-diversity", "platform-density"
-              ]
-            },
-            {
-              "type": "string",
-              "enum": [
-                "ContextBomb", "DeadWeight", "ReexportEntropy", "CouplingHotspot",
-                "CodeDuplication", "UnusedImport", "BranchDensity", "DeepNesting",
-                "TypeComplexity", "CommentRatio", "ImplicitControl", "ErrorSwallow",
-                "DangerousPattern", "MutableGlobal", "NamingEntropy", "StringlyTyped",
-                "ImportDiversity", "PlatformDensity"
-              ]
-            }
-          ]
+          "description": "Finding kind identifier. The authoritative list of valid kinds is maintained in test-fixtures/finding-kinds.json. Accepts both PascalCase (Rust serde/Python) and kebab-case (TypeScript) serialization.",
+          "type": "string",
+          "minLength": 1
         },
         "severity": {
           "description": "Accepts PascalCase (Rust serde/Python) and UPPERCASE (TypeScript)",

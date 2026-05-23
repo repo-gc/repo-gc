@@ -10,3 +10,5 @@ packages/repo-gc-shared/dist/
 packages/repo-gc/bin/
 packages/repo-gc-python/dist/
 packages/repo-gc-python/python/.venv/
+test-fixtures/
+scripts/ci/__pycache__/

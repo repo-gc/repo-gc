@@ -59,11 +59,9 @@ def compute_global_score(
                         FindingKind.CommentRatio,
                         FindingKind.ErrorSwallow,
                         FindingKind.DangerousPattern,
-                        FindingKind.MutableGlobal,
                         FindingKind.NamingEntropy,
                         FindingKind.StringlyTyped,
                         FindingKind.ImportDiversity,
-                        FindingKind.PlatformDensity,
                         FindingKind.ImplicitControl,
                     )
                 ]

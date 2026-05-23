@@ -58,62 +58,54 @@ pub enum Threshold {
 }
 
 impl Threshold {
-    pub fn line_count_limit(&self) -> usize {
+    fn level(&self) -> &'static str {
         match self {
-            Threshold::Strict => 300,
-            Threshold::Normal => 500,
-            Threshold::Relaxed => 1000,
+            Threshold::Strict => "strict",
+            Threshold::Normal => "normal",
+            Threshold::Relaxed => "relaxed",
         }
+    }
+
+    pub fn line_count_limit(&self) -> usize {
+        crate::canonical::threshold_values(self.level()).line_count_limit
     }
     pub fn fan_in_limit(&self) -> usize {
-        match self {
-            Threshold::Strict => 5,
-            Threshold::Normal => 10,
-            Threshold::Relaxed => 20,
-        }
+        crate::canonical::threshold_values(self.level()).fan_in_limit
     }
     pub fn fan_out_limit(&self) -> usize {
-        match self {
-            Threshold::Strict => 10,
-            Threshold::Normal => 15,
-            Threshold::Relaxed => 25,
-        }
+        crate::canonical::threshold_values(self.level()).fan_out_limit
     }
     pub fn reexport_limit(&self) -> usize {
-        match self {
-            Threshold::Strict => 5,
-            Threshold::Normal => 10,
-            Threshold::Relaxed => 20,
-        }
+        crate::canonical::threshold_values(self.level()).reexport_limit
     }
     pub fn branch_density_limit(&self) -> usize {
-        match self { Threshold::Strict => 8, Threshold::Normal => 12, Threshold::Relaxed => 18 }
+        crate::canonical::threshold_values(self.level()).branch_density_limit
     }
     pub fn nesting_depth_limit(&self) -> usize {
-        match self { Threshold::Strict => 4, Threshold::Normal => 6, Threshold::Relaxed => 8 }
+        crate::canonical::threshold_values(self.level()).nesting_depth_limit
     }
     pub fn type_depth_limit(&self) -> usize {
-        match self { Threshold::Strict => 3, Threshold::Normal => 4, Threshold::Relaxed => 5 }
+        crate::canonical::threshold_values(self.level()).type_depth_limit
     }
     pub fn comment_ratio_min(&self) -> f64 {
-        match self { Threshold::Strict => 0.03, Threshold::Normal => 0.03, Threshold::Relaxed => 0.01 }
+        crate::canonical::threshold_values(self.level()).comment_ratio_min
     }
     pub fn comment_ratio_max(&self) -> f64 {
-        match self { Threshold::Strict => 0.20, Threshold::Normal => 0.30, Threshold::Relaxed => 0.50 }
+        crate::canonical::threshold_values(self.level()).comment_ratio_max
     }
     pub fn decorator_density_limit(&self) -> f64 {
-        match self { Threshold::Strict => 0.33, Threshold::Normal => 0.50, Threshold::Relaxed => 0.75 }
+        crate::canonical::threshold_values(self.level()).decorator_density_limit
     }
     pub fn empty_catch_limit(&self) -> usize {
-        match self { Threshold::Strict => 1, Threshold::Normal => 2, Threshold::Relaxed => 3 }
+        crate::canonical::threshold_values(self.level()).empty_catch_limit
     }
     pub fn dangerous_pattern_limit(&self) -> usize {
-        match self { Threshold::Strict => 3, Threshold::Normal => 5, Threshold::Relaxed => 10 }
+        crate::canonical::threshold_values(self.level()).dangerous_pattern_limit
     }
     pub fn string_comparison_limit(&self) -> usize {
-        match self { Threshold::Strict => 5, Threshold::Normal => 10, Threshold::Relaxed => 15 }
+        crate::canonical::threshold_values(self.level()).string_comparison_limit
     }
     pub fn import_domain_limit(&self) -> usize {
-        match self { Threshold::Strict => 8, Threshold::Normal => 10, Threshold::Relaxed => 14 }
+        crate::canonical::threshold_values(self.level()).import_domain_limit
     }
 }

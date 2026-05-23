@@ -7,7 +7,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 pub fn analyze(
     file: &RustFile,
@@ -19,45 +19,35 @@ pub fn analyze(
     let ratio = structure.comment_line_count as f64 / line_count as f64;
 
     if ratio < threshold.comment_ratio_min() {
-        *counter += 1;
-        return Some(Finding {
-            id: format!("cr-{:03}", counter),
-            kind: FindingKind::CommentRatio,
-            severity: Severity::Medium,
-            confidence: 0.65,
-            path: file.relative_path.clone(),
-            summary: String::new(),
-            reasons: vec![],
-            evidence: vec![
+        return Some(Finding::new(
+            next_finding_id("cr", counter),
+            FindingKind::CommentRatio,
+            Severity::Medium,
+            0.65,
+            file.relative_path.clone(),
+            vec![
                 format!("comment_lines: {}", structure.comment_line_count),
                 format!("total_lines: {}", file.line_count),
                 format!("ratio: {:.4}", ratio),
                 format!("direction: sparse"),
             ],
-            suggested_next_step: String::new(),
-            estimated_tokens: None,
-        });
+        ));
     }
 
     if ratio > threshold.comment_ratio_max() {
-        *counter += 1;
-        return Some(Finding {
-            id: format!("cr-{:03}", counter),
-            kind: FindingKind::CommentRatio,
-            severity: Severity::Low,
-            confidence: 0.65,
-            path: file.relative_path.clone(),
-            summary: String::new(),
-            reasons: vec![],
-            evidence: vec![
+        return Some(Finding::new(
+            next_finding_id("cr", counter),
+            FindingKind::CommentRatio,
+            Severity::Low,
+            0.65,
+            file.relative_path.clone(),
+            vec![
                 format!("comment_lines: {}", structure.comment_line_count),
                 format!("total_lines: {}", file.line_count),
                 format!("ratio: {:.4}", ratio),
                 format!("direction: verbose"),
             ],
-            suggested_next_step: String::new(),
-            estimated_tokens: None,
-        });
+        ));
     }
 
     None
@@ -137,5 +127,13 @@ mod tests {
         assert!(r.evidence.iter().any(|e| e.starts_with("comment_lines: 1")));
         assert!(r.evidence.iter().any(|e| e.starts_with("total_lines: 200")));
         assert!(r.evidence.iter().any(|e| e.starts_with("ratio:")));
+    }
+
+    #[test]
+    fn counter_increments() {
+        let mut c = 0;
+        analyze(&f("src/lib.rs", 200), &s(1), &Threshold::Strict, &mut c);
+        analyze(&f("src/lib.rs", 200), &s(1), &Threshold::Strict, &mut c);
+        assert_eq!(c, 2);
     }
 }

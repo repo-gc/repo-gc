@@ -43,9 +43,7 @@ class FileInfo:
     decorator_count: int = 0
     empty_catch_count: int = 0
     dangerous_pattern_count: int = 0
-    mutable_global_count: int = 0
     string_comparison_count: int = 0
-    platform_conditional_count: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -501,9 +499,7 @@ def _count_empty_excepts(tree: ast.AST) -> int:
     for node in ast.walk(tree):
         if isinstance(node, ast.Try):
             for handler in node.handlers:
-                if len(handler.body) == 0:
-                    count += 1
-                elif len(handler.body) == 1 and isinstance(handler.body[0], ast.Pass):
+                if len(handler.body) == 1 and isinstance(handler.body[0], ast.Pass):
                     count += 1
                 elif (
                     len(handler.body) == 1

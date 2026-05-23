@@ -1,7 +1,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 /// Minimum unused imports before emitting a finding (reduces noise from macros/derives).
 const MIN_UNUSED: usize = 2;
@@ -34,23 +34,18 @@ pub fn analyze(
         Severity::Low
     };
 
-    *counter += 1;
     let preview: Vec<&str> = unused.iter().take(5).map(|s| s.as_str()).collect();
-    Some(Finding {
-        id: format!("ui-{:03}", counter),
-        kind: FindingKind::UnusedImport,
+    Some(Finding::new(
+        next_finding_id("ui", counter),
+        FindingKind::UnusedImport,
         severity,
-        confidence: 0.65,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.65,
+        file.relative_path.clone(),
+        vec![
             format!("unused_count: {}", unused.len()),
             format!("preview: {}", preview.join(", ")),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]

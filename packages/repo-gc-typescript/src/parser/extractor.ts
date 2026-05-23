@@ -70,6 +70,158 @@ function computeModulePath(relativePath: string, packageName: string): string {
   return `${packageName}::${parts.join('::')}`;
 }
 
+/** Measure maximum control-flow nesting depth in the AST. */
+function measureNestingDepth(root: unknown): number {
+  let maxDepth = 0;
+
+  function visit(node: unknown, depth: number): void {
+    if (!node || typeof node !== 'object') return;
+    const n = node as Record<string, unknown>;
+    const type = n.type as string | undefined;
+    if (!type) return;
+
+    const isControlFlow =
+      type === 'IfStatement' ||
+      type === 'ForStatement' ||
+      type === 'ForInStatement' ||
+      type === 'ForOfStatement' ||
+      type === 'WhileStatement' ||
+      type === 'DoWhileStatement' ||
+      type === 'SwitchStatement' ||
+      type === 'TryStatement';
+
+    const currentDepth = isControlFlow ? depth + 1 : depth;
+    maxDepth = Math.max(maxDepth, currentDepth);
+
+    for (const key of Object.keys(n)) {
+      if (key === 'parent') continue;
+      const val = n[key];
+      if (Array.isArray(val)) {
+        for (const item of val) visit(item, currentDepth);
+      } else if (typeof val === 'object' && val !== null) {
+        visit(val, currentDepth);
+      }
+    }
+  }
+
+  visit(root, 0);
+  return maxDepth;
+}
+
+/** Count control-flow branches (if/else/for/while/switch/ternary). */
+function countBranches(root: unknown): number {
+  let count = 0;
+  walk(root, (node) => {
+    switch (node.type) {
+      case 'IfStatement':
+        count += 1;
+        if (node.alternate) count += 1;
+        break;
+      case 'ForStatement':
+      case 'ForInStatement':
+      case 'ForOfStatement':
+      case 'WhileStatement':
+      case 'DoWhileStatement':
+        count += 1;
+        break;
+      case 'SwitchStatement': {
+        const cases = node.cases as unknown[] | undefined;
+        if (Array.isArray(cases)) count += cases.length;
+        break;
+      }
+      case 'ConditionalExpression':
+        count += 1;
+        break;
+    }
+  });
+  return count;
+}
+
+/** Count empty catch blocks (catch clauses with no statements). */
+function countEmptyCatches(root: unknown): number {
+  let count = 0;
+  walk(root, (node) => {
+    if (node.type !== 'CatchClause') return;
+    const body = node.body as Record<string, unknown> | undefined;
+    if (!body) {
+      count += 1;
+      return;
+    }
+    const stmts = body.body as unknown[] | undefined;
+    if (!Array.isArray(stmts) || stmts.length === 0) {
+      count += 1;
+    }
+  });
+  return count;
+}
+
+/** Count dangerous patterns: eval, Function constructor, any type, as any. */
+function countDangerousPatterns(root: unknown): number {
+  let count = 0;
+  walk(root, (node) => {
+    switch (node.type) {
+      case 'CallExpression': {
+        const callee = node.callee as Record<string, unknown> | undefined;
+        if (callee?.type === 'Identifier' && callee.name === 'eval') {
+          count += 1;
+        }
+        break;
+      }
+      case 'NewExpression': {
+        const callee = node.callee as Record<string, unknown> | undefined;
+        if (callee?.type === 'Identifier' && callee.name === 'Function') {
+          count += 1;
+        }
+        break;
+      }
+      case 'TSAnyKeyword':
+        count += 1;
+        break;
+      case 'TSAsExpression': {
+        const typeAnn = node.typeAnnotation as Record<string, unknown> | undefined;
+        if (typeAnn?.type === 'TSAnyKeyword') count += 1;
+        break;
+      }
+      case 'TSTypeAssertion': {
+        const typeAnn = node.typeAnnotation as Record<string, unknown> | undefined;
+        if (typeAnn?.type === 'TSAnyKeyword') count += 1;
+        break;
+      }
+    }
+  });
+  return count;
+}
+
+/** Count string literal comparisons (=== !== == != with a string literal operand). */
+function countStringComparisons(root: unknown): number {
+  let count = 0;
+  const cmpOps = new Set(['==', '===', '!=', '!==']);
+  walk(root, (node) => {
+    if (node.type !== 'BinaryExpression') return;
+    const op = node.operator as string;
+    if (!cmpOps.has(op)) return;
+    const left = node.left as Record<string, unknown> | undefined;
+    const right = node.right as Record<string, unknown> | undefined;
+    if (left?.type === 'StringLiteral' || right?.type === 'StringLiteral') {
+      count += 1;
+    }
+  });
+  return count;
+}
+
+/** Count comment-only lines from source text. */
+function countCommentLines(sourceText: string): number {
+  let count = 0;
+  const lines = sourceText.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*') || trimmed === '*/') {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 /** Recursively measure the nesting depth of a type expression. */
 function measureTypeDepth(node: Record<string, unknown>): number {
   switch (node.type) {
@@ -288,14 +440,12 @@ export function parseFile(file: SourceFile, workspaceRoot: string): ParseResult 
       isEntryPoint,
       maxTypeDepth,
       decoratorCount,
-      branchCount: 0,
-      maxNestingDepth: 0,
-      commentLineCount: 0,
-      emptyCatchCount: 0,
-      dangerousPatternCount: 0,
-      mutableGlobalCount: 0,
-      stringComparisonCount: 0,
-      platformConditionalCount: 0,
+      branchCount: countBranches(program),
+      maxNestingDepth: measureNestingDepth(program),
+      commentLineCount: countCommentLines(sourceText),
+      emptyCatchCount: countEmptyCatches(program),
+      dangerousPatternCount: countDangerousPatterns(program),
+      stringComparisonCount: countStringComparisons(program),
     },
     skipped: false,
   };
@@ -323,9 +473,7 @@ function emptyFileInfo(file: SourceFile, workspaceRoot: string): FileInfo {
     commentLineCount: 0,
     emptyCatchCount: 0,
     dangerousPatternCount: 0,
-    mutableGlobalCount: 0,
     stringComparisonCount: 0,
-    platformConditionalCount: 0,
   };
 }
 

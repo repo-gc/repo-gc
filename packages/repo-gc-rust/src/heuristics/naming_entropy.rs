@@ -8,7 +8,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 use std::collections::HashMap;
 
 /// Classify an identifier string into a naming convention.
@@ -80,23 +80,18 @@ pub fn analyze(
         .map(|(conv, _)| *conv)
         .unwrap_or("none");
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("ne-{:03}", counter),
-        kind: FindingKind::NamingEntropy,
-        severity: Severity::Low,
-        confidence: 0.50,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+    Some(Finding::new(
+        next_finding_id("ne", counter),
+        FindingKind::NamingEntropy,
+        Severity::Low,
+        0.50,
+        file.relative_path.clone(),
+        vec![
             format!("convention_counts: {}", serde_json::to_string(&counts).unwrap_or_default()),
             format!("dominant_convention: {}", dominant),
             format!("mixed_count: {}", active_conventions.len()),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]

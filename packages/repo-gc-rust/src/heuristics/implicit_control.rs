@@ -6,7 +6,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 pub fn analyze(
     file: &RustFile,
@@ -31,24 +31,19 @@ pub fn analyze(
         Severity::Low
     };
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("ic-{:03}", counter),
-        kind: FindingKind::ImplicitControl,
+    Some(Finding::new(
+        next_finding_id("ic", counter),
+        FindingKind::ImplicitControl,
         severity,
-        confidence: 0.40,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.40,
+        file.relative_path.clone(),
+        vec![
             format!("decorator_count: {}", decorator_count),
             format!("function_count: {}", fn_count),
             format!("ratio: {:.3}", ratio),
             format!("limit: {:.3}", limit),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]
@@ -116,5 +111,13 @@ mod tests {
         assert!(r.evidence.iter().any(|e| e.starts_with("function_count: 2")));
         assert!(r.evidence.iter().any(|e| e.starts_with("ratio:")));
         assert!(r.evidence.iter().any(|e| e.starts_with("limit:")));
+    }
+
+    #[test]
+    fn counter_increments() {
+        let mut c = 0;
+        analyze(&f(), &s(3, 2), &Threshold::Normal, &mut c);
+        analyze(&f(), &s(3, 2), &Threshold::Normal, &mut c);
+        assert_eq!(c, 2);
     }
 }

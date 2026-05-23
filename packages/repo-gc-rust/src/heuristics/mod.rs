@@ -1,3 +1,6 @@
+pub mod common;
+#[cfg(test)]
+pub mod test_utils;
 pub mod branch_density;
 pub mod context_bombs;
 pub mod coupling;

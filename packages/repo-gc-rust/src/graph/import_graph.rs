@@ -77,7 +77,7 @@ fn resolve_import<'a>(
 }
 
 impl ImportGraph {
-    pub fn build(structures: &[FileStructure], _root: &Path) -> Self {
+    pub fn build(structures: &[&FileStructure], _root: &Path) -> Self {
         let mut fan_in: HashMap<PathBuf, usize> = HashMap::new();
         let mut fan_out: HashMap<PathBuf, usize> = HashMap::new();
 
@@ -152,7 +152,7 @@ mod tests {
             make_s("src/main.rs", "my_crate", "main", vec!["crate::discovery::files::RustFile"]),
             make_s("src/discovery/files.rs", "my_crate", "discovery::files", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         assert_eq!(g.get_fan_in(&PathBuf::from("src/discovery/files.rs")), 1);
         assert_eq!(g.get_fan_out(&PathBuf::from("src/main.rs")), 1);
     }
@@ -165,7 +165,7 @@ mod tests {
             make_s("src/api/child.rs", "my_crate", "api::child", vec!["super::helpers::Bar"]),
             make_s("src/api/helpers.rs", "my_crate", "api::helpers", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         assert_eq!(g.get_fan_in(&PathBuf::from("src/api/helpers.rs")), 1);
     }
 
@@ -178,7 +178,7 @@ mod tests {
             make_s("src/helpers.rs", "my_crate", "helpers", vec![]),
             make_s("src/api/helpers.rs", "my_crate", "api::helpers", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         // Should resolve to src/api/helpers.rs, NOT src/helpers.rs
         assert_eq!(g.get_fan_in(&PathBuf::from("src/api/helpers.rs")), 1);
         assert_eq!(g.get_fan_in(&PathBuf::from("src/helpers.rs")), 0);
@@ -190,7 +190,7 @@ mod tests {
             make_s("src/utils.rs", "my_crate", "utils", vec!["self::internal::Foo"]),
             make_s("src/utils/internal.rs", "my_crate", "utils::internal", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         assert_eq!(g.get_fan_in(&PathBuf::from("src/utils/internal.rs")), 1);
     }
 
@@ -200,14 +200,14 @@ mod tests {
             make_s("src/main.rs", "my_crate", "main", vec!["crate::api::Handler"]),
             make_s("src/api/mod.rs", "my_crate", "api", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         assert_eq!(g.get_fan_in(&PathBuf::from("src/api/mod.rs")), 1);
     }
 
     #[test]
     fn self_import_not_counted() {
         let ss = vec![make_s("src/utils.rs", "my_crate", "utils", vec!["crate::utils::internal"])];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         assert_eq!(g.get_fan_in(&PathBuf::from("src/utils.rs")), 0);
     }
 
@@ -217,7 +217,7 @@ mod tests {
             make_s("src/lib.rs", "my_crate", "lib", vec!["std::collections::HashMap", "serde::Serialize"]),
             make_s("src/utils.rs", "my_crate", "utils", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("src"));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("src"));
         assert_eq!(g.get_fan_out(&PathBuf::from("src/lib.rs")), 0);
     }
 
@@ -230,7 +230,7 @@ mod tests {
             make_s("pkg_b/src/main.rs", "pkg_b", "main", vec!["crate::utils::Bar"]),
             make_s("pkg_b/src/utils.rs", "pkg_b", "utils", vec![]),
         ];
-        let g = ImportGraph::build(&ss, Path::new("."));
+        let g = ImportGraph::build(&ss.iter().collect::<Vec<_>>(),Path::new("."));
         // Each package's main only increments its own utils
         assert_eq!(g.get_fan_in(&PathBuf::from("pkg_a/src/utils.rs")), 1);
         assert_eq!(g.get_fan_in(&PathBuf::from("pkg_b/src/utils.rs")), 1);

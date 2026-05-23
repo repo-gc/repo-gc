@@ -12,7 +12,7 @@
 use crate::cli::Threshold;
 use crate::discovery::RustFile;
 use crate::parsing::FileStructure;
-use crate::types::{Finding, FindingKind, Severity};
+use crate::types::{next_finding_id, Finding, FindingKind, Severity};
 
 /// Extract the domain from a Rust use path.
 ///
@@ -83,23 +83,18 @@ pub fn analyze(
     let top_domains: Vec<&str> = domains.iter().map(String::as_str).take(8).collect();
     let domains_str = top_domains.join(", ");
 
-    *counter += 1;
-    Some(Finding {
-        id: format!("id-{:03}", counter),
-        kind: FindingKind::ImportDiversity,
+    Some(Finding::new(
+        next_finding_id("id", counter),
+        FindingKind::ImportDiversity,
         severity,
-        confidence: 0.70,
-        path: file.relative_path.clone(),
-        summary: String::new(),
-        reasons: vec![],
-        evidence: vec![
+        0.70,
+        file.relative_path.clone(),
+        vec![
             format!("domain_count: {}", count),
             format!("domains: {}", domains_str),
             format!("limit: {}", limit),
         ],
-        suggested_next_step: String::new(),
-        estimated_tokens: None,
-    })
+    ))
 }
 
 #[cfg(test)]

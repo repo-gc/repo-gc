@@ -6,17 +6,37 @@ Mirrors Rust's cli.rs + main.rs analyze() pipeline.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from . import __version__
+from .discovery import PythonFile
+from .parsing import FileInfo
 from .types import Finding, Report, Severity
 
 logger = logging.getLogger("repo-gc-python")
 
 OUTPUT_FORMATS = ("text", "json", "md", "llm")
 THRESHOLD_LEVELS = ("strict", "normal", "relaxed")
+
+_CANONICAL_THRESHOLDS: dict | None = None
+
+
+def _load_thresholds() -> dict:
+    """Load the thresholds section from the canonical finding kinds JSON."""
+    global _CANONICAL_THRESHOLDS
+    if _CANONICAL_THRESHOLDS is None:
+        path = (
+            Path(__file__).resolve().parent.parent.parent.parent.parent
+            / "test-fixtures"
+            / "finding-kinds.json"
+        )
+        with open(path) as f:
+            _CANONICAL_THRESHOLDS = json.load(f)["thresholds"]
+    return _CANONICAL_THRESHOLDS
 
 
 class Threshold:
@@ -27,67 +47,59 @@ class Threshold:
 
     @property
     def line_count_limit(self) -> int:
-        return {"strict": 300, "normal": 500, "relaxed": 1000}[self._level]
+        return _load_thresholds()[self._level]["line_count_limit"]
 
     @property
     def fan_in_limit(self) -> int:
-        return {"strict": 5, "normal": 10, "relaxed": 20}[self._level]
+        return _load_thresholds()[self._level]["fan_in_limit"]
 
     @property
     def fan_out_limit(self) -> int:
-        return {"strict": 10, "normal": 15, "relaxed": 25}[self._level]
+        return _load_thresholds()[self._level]["fan_out_limit"]
 
     @property
     def reexport_limit(self) -> int:
-        return {"strict": 5, "normal": 10, "relaxed": 20}[self._level]
+        return _load_thresholds()[self._level]["reexport_limit"]
 
     @property
     def branch_density_limit(self) -> int:
-        return {"strict": 8, "normal": 12, "relaxed": 18}[self._level]
+        return _load_thresholds()[self._level]["branch_density_limit"]
 
     @property
     def nesting_depth_limit(self) -> int:
-        return {"strict": 4, "normal": 6, "relaxed": 8}[self._level]
+        return _load_thresholds()[self._level]["nesting_depth_limit"]
 
     @property
     def type_depth_limit(self) -> int:
-        return {"strict": 3, "normal": 4, "relaxed": 5}[self._level]
+        return _load_thresholds()[self._level]["type_depth_limit"]
 
     @property
     def comment_ratio_min(self) -> float:
-        return {"strict": 0.03, "normal": 0.03, "relaxed": 0.01}[self._level]
+        return _load_thresholds()[self._level]["comment_ratio_min"]
 
     @property
     def comment_ratio_max(self) -> float:
-        return {"strict": 0.20, "normal": 0.30, "relaxed": 0.50}[self._level]
+        return _load_thresholds()[self._level]["comment_ratio_max"]
 
     @property
     def decorator_density_limit(self) -> float:
-        return {"strict": 0.33, "normal": 0.50, "relaxed": 0.75}[self._level]
+        return _load_thresholds()[self._level]["decorator_density_limit"]
 
     @property
     def empty_catch_limit(self) -> int:
-        return {"strict": 1, "normal": 2, "relaxed": 3}[self._level]
+        return _load_thresholds()[self._level]["empty_catch_limit"]
 
     @property
     def dangerous_pattern_limit(self) -> int:
-        return {"strict": 3, "normal": 5, "relaxed": 10}[self._level]
-
-    @property
-    def mutable_global_limit(self) -> int:
-        return {"strict": 3, "normal": 5, "relaxed": 8}[self._level]
+        return _load_thresholds()[self._level]["dangerous_pattern_limit"]
 
     @property
     def string_comparison_limit(self) -> int:
-        return {"strict": 5, "normal": 10, "relaxed": 15}[self._level]
-
-    @property
-    def platform_conditional_limit(self) -> int:
-        return {"strict": 3, "normal": 5, "relaxed": 10}[self._level]
+        return _load_thresholds()[self._level]["string_comparison_limit"]
 
     @property
     def import_domain_limit(self) -> int:
-        return {"strict": 8, "normal": 10, "relaxed": 14}[self._level]
+        return _load_thresholds()[self._level]["import_domain_limit"]
 
     @property
     def level(self) -> str:
@@ -131,6 +143,28 @@ def build_parser() -> argparse.ArgumentParser:
     explain.add_argument("--root", default=".", type=Path, help="Project root")
 
     return parser
+
+
+def _run_heuristic(
+    fn: Callable,
+    name: str,
+    pf: PythonFile,
+    info: FileInfo,
+    threshold: Threshold,
+    counter: int,
+    findings: list[Finding],
+    errors: list[str],
+) -> int:
+    """Run a per-file heuristic with error isolation, returning the updated counter."""
+    try:
+        result = fn(pf, info, threshold, counter + 1)
+    except Exception as exc:
+        errors.append(f"{pf.relative_path}: {name}: {exc}")
+    else:
+        if result:
+            findings.append(result)
+            counter += 1
+    return counter
 
 
 def analyze(path: Path, threshold: Threshold, include_tests: bool) -> Report:
@@ -189,23 +223,9 @@ def analyze(path: Path, threshold: Threshold, include_tests: bool) -> Report:
             continue
 
         # Per-file heuristics (with error isolation matching run-heuristics.ts)
-        try:
-            result = context_bombs.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: context-bombs: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(context_bombs.analyze, "context-bombs", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = reexport_entropy.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: reexport-entropy: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(reexport_entropy.analyze, "reexport-entropy", pf, info, threshold, counter, findings, errors)
 
         try:
             result = coupling.analyze(pf, graph, threshold, counter + 1)
@@ -216,86 +236,23 @@ def analyze(path: Path, threshold: Threshold, include_tests: bool) -> Report:
                 findings.append(result)
                 counter += 1
 
-        try:
-            result = unused_imports.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: unused-imports: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(unused_imports.analyze, "unused-imports", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = error_swallow.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: error-swallow: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(error_swallow.analyze, "error-swallow", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = branch_density.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: branch-density: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(branch_density.analyze, "branch-density", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = deep_nesting.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: deep-nesting: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(deep_nesting.analyze, "deep-nesting", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = import_diversity.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: import-diversity: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(import_diversity.analyze, "import-diversity", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = dangerous_pattern.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: dangerous-pattern: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(dangerous_pattern.analyze, "dangerous-pattern", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = naming_entropy.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: naming-entropy: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(naming_entropy.analyze, "naming-entropy", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = type_complexity.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: type-complexity: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(type_complexity.analyze, "type-complexity", pf, info, threshold, counter, findings, errors)
 
-        try:
-            result = implicit_control.analyze(pf, info, threshold, counter + 1)
-        except Exception as exc:
-            errors.append(f"{pf.relative_path}: implicit-control: {exc}")
-        else:
-            if result:
-                findings.append(result)
-                counter += 1
+        counter = _run_heuristic(implicit_control.analyze, "implicit-control", pf, info, threshold, counter, findings, errors)
 
 
     # Global heuristics (operate on all files at once)
